@@ -1446,3 +1446,21 @@ body {
 .rp-timeline-labels { font-size: 10px; }
 .gs-card-handle { font-size: 12px; }
 .gs-card-row { font-size: 12px; }
+
+/* ── Style ALL input kinds (password/email were unstyled) ── */
+.modal input[type="text"], .modal input[type="password"], .modal input[type="email"],
+.landing-panel input[type="text"], .landing-panel input[type="password"], .landing-panel input[type="email"] {
+  width: 100%; padding: 13px 16px;
+  background: rgba(0,0,0,0.4); border: 1px solid var(--line-strong);
+  color: var(--text); font-family: var(--font-mono); font-size: 15px; letter-spacing: 0.08em;
+  outline: none; border-radius: 0; appearance: none; -webkit-appearance: none;
+}
+.modal input:focus, .landing-panel input:focus {
+  border-color: var(--accent); box-shadow: 0 0 16px var(--accent-glow);
+}
+/* password dots in theme color, autofill not blinding white */
+.modal input, .landing-panel input { caret-color: var(--accent); }
+.modal input:-webkit-autofill, .landing-panel input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #060a12 inset;
+  -webkit-text-fill-color: var(--text);
+}

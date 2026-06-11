@@ -140,8 +140,8 @@ export default function AccountModal({ onClose, onEditProfile }) {
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <span className="step-tag">⟡ PADDOCK ID · GLOBAL SIGN-IN</span>
         <div className="acct-tabs">
-          <button className={`tt-btn ${tab === 'login' ? 'on' : ''}`} onClick={() => setTab('login')}>Sign in</button>
-          <button className={`tt-btn ${tab === 'register' ? 'on' : ''}`} onClick={() => setTab('register')}>Create ID</button>
+          <button className={`tt-btn ${tab === 'login' ? 'on' : ''}`} onClick={() => { setTab('login'); setMsg(null); }}>Sign in</button>
+          <button className={`tt-btn ${tab === 'register' ? 'on' : ''}`} onClick={() => { setTab('register'); setMsg(null); }}>Create ID</button>
         </div>
 
         {needsBlob && (
@@ -153,7 +153,7 @@ export default function AccountModal({ onClose, onEditProfile }) {
         {tab === 'register' ? (
           <>
             <h2>Create your Paddock ID</h2>
-            <p>One ID for everything · predictions, Paddock Points, your driver. You&apos;ll get a garage code as your password.</p>
+            <p>One ID for everything · predictions, Paddock Points, your garage. Pick your own password.</p>
             <input type="text" placeholder="PADDOCK ID (3–16 chars)" value={handle} maxLength={16}
               onChange={(e) => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))} />
             <div style={{ height: 10 }} />

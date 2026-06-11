@@ -202,7 +202,7 @@ export async function POST(req) {
 
     if (action === 'login') {
       const user = await auth(body);
-      if (!user) return err('Unknown Paddock ID or wrong garage code', 401);
+      if (!user) return err('Unknown Paddock ID or wrong password', 401);
       const scored = await scorePredictions(user.predictions || {});
       return json({ ok: true, profile: publicProfile(user), scored }, 0);
     }

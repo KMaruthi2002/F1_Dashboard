@@ -240,8 +240,8 @@ export default function Gate({ children }) {
         <div className="landing-panel">
           <span className="step-tag">⟡ PADDOCK ID · ONE LOGIN FOR EVERYTHING</span>
           <div className="acct-tabs">
-            <button className={`tt-btn ${tab === 'create' ? 'on' : ''}`} onClick={() => setTab('create')}>Create ID</button>
-            <button className={`tt-btn ${tab === 'login' ? 'on' : ''}`} onClick={() => setTab('login')}>Sign in</button>
+            <button className={`tt-btn ${tab === 'create' ? 'on' : ''}`} onClick={() => { setTab('create'); setForgotMode(false); setMsg(null); }}>Create ID</button>
+            <button className={`tt-btn ${tab === 'login' ? 'on' : ''}`} onClick={() => { setTab('login'); setMsg(null); }}>Sign in</button>
           </div>
 
           {tab === 'create' ? (
