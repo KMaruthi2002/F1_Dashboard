@@ -1391,3 +1391,58 @@ body {
   stroke-linecap: round; stroke-linejoin: round;
   stroke-dasharray: 12 9;
 }
+
+/* ════════════════ Readability pass ════════════════ */
+/* brighter secondary text, lighter overlays, bigger small print */
+:root {
+  --text: #e9f2f9;
+  --text-dim: #9db2c4;
+  --text-faint: #64798c;
+}
+.scanlines { opacity: 0.22; }
+.vignette {
+  background: radial-gradient(ellipse 120% 100% at 50% 50%, transparent 68%, rgba(0,0,0,0.32) 100%);
+}
+
+/* small print: minimum sizes up across the HUD */
+.statusbar { font-size: 12px; }
+.ticker { font-size: 12px; }
+.secnav a { font-size: 11px; }
+.panel-kicker { font-size: 11px; }
+.panel-sub { font-size: 11px; }
+.mission-tile .mt-desc { font-size: 11px; line-height: 1.8; }
+.hero-greeting { font-size: 13px; }
+.hero-meta { font-size: 13px; }
+.hero-motto { font-size: 12px; }
+.session-row { font-size: 13px; }
+.session-row .s-time { color: var(--text-dim); }
+.wx-label { font-size: 10px; }
+.cd-label { font-size: 11px; }
+.cal-round { font-size: 11px; }
+.cal-loc, .cal-tile .ct-loc { font-size: 10px; }
+.cal-tile .ct-round { font-size: 10px; }
+.cal-date { font-size: 12px; }
+.st-team { font-size: 11px; }
+.st-code { font-size: 11px; }
+.rc-msg { font-size: 12px; line-height: 1.7; }
+.tw-name { font-size: 13px; }
+.tw-gap, .tw-int { font-size: 12px; }
+.tw-tirelaps { font-size: 11px; }
+.rtable { font-size: 12px; }
+.rtable th { font-size: 10px; }
+.tt-table { font-size: 12px; }
+.tt-table th { font-size: 9px; }
+.stint-legend { font-size: 11px; }
+.fav-team { font-size: 12px; }
+.fav-stat .l { font-size: 9px; }
+.ps-sub { font-size: 9px; }
+.ps-hint { font-size: 10px; }
+.id-strip { font-size: 12px; }
+.id-field span { font-size: 10px; }
+.landing-tag { font-size: 12px; }
+.lf span:last-child { font-size: 14px; color: var(--text-dim); }
+.landing-guest { font-size: 11px; }
+.landing-foot { font-size: 10px; }
+.rp-timeline-labels { font-size: 10px; }
+.gs-card-handle { font-size: 12px; }
+.gs-card-row { font-size: 12px; }
