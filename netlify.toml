@@ -1,0 +1,6 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+# Netlify auto-installs its Next.js runtime (@netlify/plugin-nextjs)
+# when it detects a Next.js project — API routes run as serverless functions.
