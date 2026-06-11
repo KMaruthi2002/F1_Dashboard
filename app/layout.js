@@ -1,6 +1,6 @@
 import './globals.css';
 import { Orbitron, Rajdhani, Share_Tech_Mono } from 'next/font/google';
-import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from '@vercel/analytics/next';
 
 const orbitron = Orbitron({ subsets: ['latin'], weight: ['500', '700', '900'], variable: '--f-orbitron' });
 const rajdhani = Rajdhani({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--f-rajdhani' });
@@ -32,7 +32,7 @@ export default function RootLayout({ children }) {
         {children}
         <div className="vignette" />
         <div className="scanlines" />
-        <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
