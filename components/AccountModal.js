@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { useAuth } from './AuthProvider';
 
 export default function AccountModal({ onClose, onEditProfile }) {
-  const { account, scored, needsBlob, register, login, logout } = useAuth();
+  const { account, scored, needsBlob, register, login, logout, creds } = useAuth();
   const [tab, setTab] = useState('login');
+  const [showCode, setShowCode] = useState(false);
   const [handle, setHandle] = useState('');
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
@@ -50,6 +51,16 @@ export default function AccountModal({ onClose, onEditProfile }) {
             <div className="fav-stat"><div className="v">{account.teamId ? '✓' : '—'}</div><div className="l">Team Supported</div></div>
           </div>
           <button className="btn-primary" onClick={() => { onClose(); onEditProfile?.(); }}>⟡ Edit garage · name, team &amp; drivers</button>
+          {creds?.code && (
+            <>
+              <button className="btn-ghost" onClick={() => setShowCode((s) => !s)}>
+                {showCode ? '🙈 Hide garage code' : '🔑 Show my garage code'}
+              </button>
+              {showCode && (
+                <div className="garage-code" style={{ fontSize: 24 }}>{creds.code}</div>
+              )}
+            </>
+          )}
           <a className="btn-ghost" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }} href="/paddock">⟶ Go to the Paddock</a>
           <button className="btn-ghost" onClick={() => { logout(); onClose(); }}>Sign out</button>
           <button className="btn-ghost" onClick={onClose}>Close</button>

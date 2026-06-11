@@ -139,23 +139,9 @@ export default function Gate({ children }) {
     );
   }
 
-  // fresh account → full-screen garage build; sign-in skips straight to the app
-  if (account && customizing) {
-    return (
-      <GarageSetup
-        handle={account.handle}
-        drivers={standings?.drivers || []}
-        constructors={standings?.constructors || []}
-        circuits={schedule?.races || []}
-        initial={account}
-        busy={busy}
-        onDone={async (p) => { setBusy(true); await updateProfile(p); setBusy(false); setCustomizing(false); }}
-      />
-    );
-  }
-
-  if (account || guest) return children;
-
+  // ORDER MATTERS: a fresh registration signs you in immediately, so the
+  // garage-code reveal and garage build must be checked BEFORE the
+  // "signed in → enter the app" shortcut.
   if (newCode) {
     return (
       <div className="landing">
@@ -174,6 +160,23 @@ export default function Gate({ children }) {
       </div>
     );
   }
+
+  // fresh account → full-screen garage build; sign-in skips straight to the app
+  if (account && customizing) {
+    return (
+      <GarageSetup
+        handle={account.handle}
+        drivers={standings?.drivers || []}
+        constructors={standings?.constructors || []}
+        circuits={schedule?.races || []}
+        initial={account}
+        busy={busy}
+        onDone={async (p) => { setBusy(true); await updateProfile(p); setBusy(false); setCustomizing(false); }}
+      />
+    );
+  }
+
+  if (account || guest) return children;
 
   const top5 = (standings?.drivers || []).slice(0, 5);
 
