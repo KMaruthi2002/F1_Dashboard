@@ -124,11 +124,15 @@ export async function POST(req) {
     if (!hasBlob()) return json({ ok: false, needsBlob: true }, 0);
 
     if (action === 'register') {
-      const { handle, name, drivers, teamId } = body;
+      const { handle, name, drivers, teamId, password } = body;
       if (!validHandle(handle)) return err('Handle must be 3–16 letters, numbers or _');
+      if (password !== undefined && (typeof password !== 'string' || password.length < 6 || password.length > 64)) {
+        return err('Password must be 6–64 characters');
+      }
       const existing = await getUser(handle);
       if (existing) return err('That Paddock ID is taken', 409);
-      const code = makeGarageCode();
+      // user-chosen password preferred; generated garage code as legacy fallback
+      const code = password || makeGarageCode();
       const user = {
         handle, codeHash: sha(code),
         name: (name || '').slice(0, 24),
@@ -138,7 +142,20 @@ export async function POST(req) {
         createdAt: new Date().toISOString(),
       };
       await putUser(user);
-      return json({ ok: true, code, profile: publicProfile(user) }, 0);
+      // only reveal a code when WE generated it; chosen passwords are never echoed
+      return json({ ok: true, code: password ? null : code, profile: publicProfile(user) }, 0);
+    }
+
+    if (action === 'password') {
+      const user = await auth(body);
+      if (!user) return err('Current password is wrong', 401);
+      const { newPassword } = body;
+      if (typeof newPassword !== 'string' || newPassword.length < 6 || newPassword.length > 64) {
+        return err('New password must be 6–64 characters');
+      }
+      user.codeHash = sha(newPassword);
+      await putUser(user);
+      return json({ ok: true }, 0);
     }
 
     if (action === 'login') {

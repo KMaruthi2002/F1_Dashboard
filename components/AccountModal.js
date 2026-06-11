@@ -4,29 +4,39 @@ import { useState } from 'react';
 import { useAuth } from './AuthProvider';
 
 export default function AccountModal({ onClose, onEditProfile }) {
-  const { account, scored, needsBlob, register, login, logout, creds } = useAuth();
+  const { account, scored, needsBlob, register, login, logout, creds, changePassword } = useAuth();
   const [tab, setTab] = useState('login');
   const [showCode, setShowCode] = useState(false);
   const [handle, setHandle] = useState('');
   const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [pwMsg, setPwMsg] = useState(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
   const [newCode, setNewCode] = useState(null);
 
   const doRegister = async () => {
     setBusy(true); setMsg(null);
-    const d = await register(handle.trim(), name.trim());
+    const d = await register(handle.trim(), name.trim(), password);
     setBusy(false);
-    if (d.ok) setNewCode(d.code);
+    if (d.ok) { if (d.code) setNewCode(d.code); else onClose(); }
     else setMsg(d.error || (d.needsBlob ? 'Cloud accounts not configured yet (Vercel Blob).' : 'Failed'));
   };
 
   const doLogin = async () => {
     setBusy(true); setMsg(null);
-    const d = await login(handle.trim(), code.trim().toUpperCase());
+    const d = await login(handle.trim(), code.trim());
     setBusy(false);
     if (!d.ok) setMsg(d.error || (d.needsBlob ? 'Cloud accounts not configured yet (Vercel Blob).' : 'Failed'));
+  };
+
+  const doChangePassword = async () => {
+    setPwMsg(null);
+    const d = await changePassword(newPw);
+    setPwMsg(d.ok ? '✓ Password updated everywhere' : `✗ ${d.error || 'Failed'}`);
+    if (d.ok) setNewPw('');
   };
 
   // ── signed in view ──
@@ -54,13 +64,27 @@ export default function AccountModal({ onClose, onEditProfile }) {
           {creds?.code && (
             <>
               <button className="btn-ghost" onClick={() => setShowCode((s) => !s)}>
-                {showCode ? '🙈 Hide garage code' : '🔑 Show my garage code'}
+                {showCode ? '🙈 Hide password' : '🔑 Show my password / garage code'}
               </button>
               {showCode && (
                 <div className="garage-code" style={{ fontSize: 24 }}>{creds.code}</div>
               )}
             </>
           )}
+          {/* change password */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+            <input
+              type="password" placeholder="NEW PASSWORD (min 6)" value={newPw} maxLength={64}
+              style={{ flex: 1 }}
+              onChange={(e) => setNewPw(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && newPw.length >= 6 && doChangePassword()}
+            />
+            <button className="btn-ghost" style={{ marginTop: 0, width: 'auto', padding: '0 16px' }}
+              disabled={newPw.length < 6} onClick={doChangePassword}>
+              ⟳ Change
+            </button>
+          </div>
+          {pwMsg && <p style={{ color: pwMsg.startsWith('✓') ? 'var(--green)' : 'var(--red)', marginTop: 8, fontSize: 13 }}>{pwMsg}</p>}
           <a className="btn-ghost" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }} href="/paddock">⟶ Go to the Paddock</a>
           <button className="btn-ghost" onClick={() => { logout(); onClose(); }}>Sign out</button>
           <button className="btn-ghost" onClick={onClose}>Close</button>
@@ -114,7 +138,10 @@ export default function AccountModal({ onClose, onEditProfile }) {
             <div style={{ height: 10 }} />
             <input type="text" placeholder="DISPLAY NAME (optional)" value={name} maxLength={24}
               onChange={(e) => setName(e.target.value)} />
-            <button className="btn-primary" disabled={busy || handle.trim().length < 3} onClick={doRegister}>
+            <div style={{ height: 10 }} />
+            <input type="password" placeholder="PASSWORD (min 6 chars)" value={password} maxLength={64}
+              onChange={(e) => setPassword(e.target.value)} />
+            <button className="btn-primary" disabled={busy || handle.trim().length < 3 || password.length < 6} onClick={doRegister}>
               {busy ? 'Building garage…' : 'Create ID ›'}
             </button>
           </>
@@ -125,8 +152,8 @@ export default function AccountModal({ onClose, onEditProfile }) {
             <input type="text" placeholder="PADDOCK ID" value={handle} maxLength={16}
               onChange={(e) => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))} />
             <div style={{ height: 10 }} />
-            <input type="text" placeholder="GARAGE CODE" value={code} maxLength={8}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
+            <input type="password" placeholder="PASSWORD / GARAGE CODE" value={code} maxLength={64}
+              onChange={(e) => setCode(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && doLogin()} />
             <button className="btn-primary" disabled={busy || !handle || !code} onClick={doLogin}>
               {busy ? 'Checking…' : 'Sign in ›'}

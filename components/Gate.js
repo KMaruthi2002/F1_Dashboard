@@ -72,6 +72,7 @@ export default function Gate({ children }) {
   const [tab, setTab] = useState('create');
   const [handle, setHandle] = useState('');
   const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -103,15 +104,18 @@ export default function Gate({ children }) {
 
   const doRegister = async () => {
     setBusy(true); setMsg(null);
-    const d = await register(handle.trim(), name.trim());
+    const d = await register(handle.trim(), name.trim(), password);
     setBusy(false);
-    if (d.ok) setNewCode(d.code);
-    else setMsg(d.error || (d.needsBlob ? 'Cloud accounts are warming up · continue as guest below.' : 'Failed'));
+    if (d.ok) {
+      if (d.code) setNewCode(d.code);   // legacy: server-generated code
+      else setCustomizing(true);        // chosen password → straight to the garage build
+    } else setMsg(d.error || (d.needsBlob ? 'Cloud accounts are warming up · continue as guest below.' : 'Failed'));
   };
 
   const doLogin = async () => {
     setBusy(true); setMsg(null);
-    const d = await login(handle.trim(), code.trim().toUpperCase());
+    // passwords are case-sensitive; legacy garage codes are uppercase
+    const d = await login(handle.trim(), code.trim());
     setBusy(false);
     if (!d.ok) setMsg(d.error || (d.needsBlob ? 'Cloud accounts are warming up · continue as guest below.' : 'Failed'));
   };
@@ -123,9 +127,11 @@ export default function Gate({ children }) {
 
   // start lights: fill as the form gets ready
   const lights = tab === 'create'
-    ? Math.min(5, Math.floor(handle.trim().length / 2) + (handle.trim().length >= 3 ? 2 : 0))
+    ? Math.min(5, (handle.trim().length >= 3 ? 2 : Math.floor(handle.trim().length / 2)) + Math.min(3, Math.floor(password.length / 2)))
     : Math.min(5, (handle.trim().length >= 3 ? 2 : Math.floor(handle.trim().length)) + Math.min(3, Math.floor(code.trim().length / 3)));
-  const armed = tab === 'create' ? handle.trim().length >= 3 : handle.trim().length >= 3 && code.trim().length >= 6;
+  const armed = tab === 'create'
+    ? handle.trim().length >= 3 && password.length >= 6
+    : handle.trim().length >= 3 && code.trim().length >= 6;
 
   // public, shareable routes skip the gate entirely
   if (pathname?.startsWith('/racer')) return children;
@@ -220,12 +226,15 @@ export default function Gate({ children }) {
           {tab === 'create' ? (
             <>
               <h2 className="landing-h2">Build your garage</h2>
-              <p className="landing-p">Pick an ID, get a garage code, choose your team and drivers. Then the pit lane opens.</p>
+              <p className="landing-p">Pick an ID and a password, choose your team and drivers. Then the pit lane opens.</p>
               <input type="text" placeholder="PADDOCK ID (3–16 chars)" value={handle} maxLength={16}
                 onChange={(e) => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))} />
               <div style={{ height: 10 }} />
               <input type="text" placeholder="DISPLAY NAME (optional)" value={name} maxLength={24}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => setName(e.target.value)} />
+              <div style={{ height: 10 }} />
+              <input type="password" placeholder="PASSWORD (min 6 chars)" value={password} maxLength={64}
+                onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && armed && doRegister()} />
             </>
           ) : (
@@ -235,8 +244,8 @@ export default function Gate({ children }) {
               <input type="text" placeholder="PADDOCK ID" value={handle} maxLength={16}
                 onChange={(e) => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))} />
               <div style={{ height: 10 }} />
-              <input type="text" placeholder="GARAGE CODE" value={code} maxLength={8}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
+              <input type="password" placeholder="PASSWORD / GARAGE CODE" value={code} maxLength={64}
+                onChange={(e) => setCode(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && doLogin()} />
             </>
           )}

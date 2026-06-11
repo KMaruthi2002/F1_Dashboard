@@ -41,16 +41,26 @@ export default function AuthProvider({ children }) {
 
   const persist = (c) => { try { localStorage.setItem(LS_KEY, JSON.stringify(c)); } catch {} };
 
-  const register = useCallback(async (handle, name, driverId) => {
-    const d = await api({ action: 'register', handle, name, driverId });
+  const register = useCallback(async (handle, name, password) => {
+    const d = await api({ action: 'register', handle, name, password });
     if (d.needsBlob) { setNeedsBlob(true); return d; }
     if (d.ok) {
-      const c = { handle, code: d.code };
+      const c = { handle, code: password || d.code };
       setCreds(c); persist(c);
       setProfile(d.profile); setScored({ rounds: {}, total: 0 });
     }
     return d;
   }, []);
+
+  const changePassword = useCallback(async (newPassword) => {
+    if (!creds) return { ok: false };
+    const d = await api({ action: 'password', ...creds, newPassword });
+    if (d.ok) {
+      const c = { handle: creds.handle, code: newPassword };
+      setCreds(c); persist(c);
+    }
+    return d;
+  }, [creds]);
 
   const login = useCallback(async (handle, code) => {
     const d = await api({ action: 'login', handle, code });
@@ -94,7 +104,7 @@ export default function AuthProvider({ children }) {
     creds,
     scored,                   // {rounds: {round: {points, settled, detail}}, total}
     needsBlob,                // true → Blob store not configured yet
-    register, login, logout, updateProfile, savePrediction, refresh,
+    register, login, logout, updateProfile, savePrediction, refresh, changePassword,
   };
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
