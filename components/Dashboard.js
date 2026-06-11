@@ -114,6 +114,7 @@ export default function Dashboard() {
   const effProfile = useMemo(() => {
     if (account) {
       return {
+        ...account,
         name: account.name || account.handle,
         teamId: account.teamId || null,
         drivers: account.drivers || [],
@@ -292,7 +293,7 @@ export default function Dashboard() {
         </div>
 
         <div id="calendar" className="section fade-in">
-          <Calendar schedule={schedule} nextRound={nextRace?.round} liveRace={live} />
+          <Calendar schedule={schedule} nextRound={nextRace?.round} liveRace={live} favCircuitId={effProfile?.circuitId} />
         </div>
 
         <div id="race" className="section fade-in">
@@ -348,6 +349,7 @@ export default function Dashboard() {
         <ProfileModal
           drivers={standings?.drivers || []}
           constructors={standings?.constructors || []}
+          circuits={schedule?.races || []}
           initial={effProfile}
           onSave={saveProfile}
           onClose={() => setShowProfile(false)}

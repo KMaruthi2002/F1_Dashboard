@@ -313,13 +313,19 @@ export default function Paddock() {
             ) : (
               <div className="standings">
                 {leaderboard.map((u, i) => {
-                  const team = u.driverId && standings ? teamByConstructorId(drivers.find((d) => d.driverId === u.driverId)?.constructorId) : null;
+                  const accentTeam = u.teamId
+                    ? teamByConstructorId(u.teamId)
+                    : u.driverId && standings
+                      ? teamByConstructorId(drivers.find((d) => d.driverId === u.driverId)?.constructorId)
+                      : null;
                   return (
-                    <div key={u.handle} className="st-row teams" style={{ '--row-color': team?.color || 'var(--cyan)' }}>
+                    <div key={u.handle} className="st-row teams" style={{ '--row-color': accentTeam?.color || 'var(--cyan)' }} title={u.motto || ''}>
                       <span className={`pos-plate ${i === 0 ? 'gold' : ''}`}>{i + 1}</span>
                       <span className="st-main">
-                        <span className="st-name">@{u.handle}</span>
-                        <span className="st-team">{u.name}</span>
+                        <span className="st-name">
+                          {u.country ? `${flagFor(u.country)} ` : ''}@{u.handle}{u.number ? <span style={{ color: accentTeam?.color || 'var(--accent)', fontSize: 12 }}> #{u.number}</span> : ''}
+                        </span>
+                        <span className="st-team">{u.motto || u.name}</span>
                       </span>
                       <span className="st-pts">{u.total}<span className="pts-label">PP</span></span>
                     </div>

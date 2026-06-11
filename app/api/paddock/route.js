@@ -63,7 +63,12 @@ export async function GET() {
     const users = await listUsers();
     const rows = await Promise.all(users.map(async (u) => {
       const { total } = await scorePredictions(u.predictions || {});
-      return { handle: u.handle, name: u.name || '', driverId: u.driverId || null, total };
+      const drivers = u.drivers || (u.driverId ? [u.driverId] : []);
+      return {
+        handle: u.handle, name: u.name || '', driverId: drivers[0] || null,
+        teamId: u.teamId || null, country: u.country || null,
+        number: u.number || null, motto: u.motto || '', total,
+      };
     }));
     rows.sort((a, b) => b.total - a.total);
     return json({ ok: true, leaderboard: rows.slice(0, 25) }, 120);

@@ -34,8 +34,15 @@ export default function AccountModal({ onClose, onEditProfile }) {
       <div className="modal-veil" onClick={onClose}>
         <div className="modal" onClick={(e) => e.stopPropagation()}>
           <span className="step-tag">⟡ PADDOCK ID</span>
-          <h2>@{account.handle}</h2>
-          <p>{account.name ? `${account.name} · ` : ''}signed in everywhere · picks, points and your driver follow this ID.</p>
+          <h2>@{account.handle}{account.number ? <span style={{ color: 'var(--accent)' }}> #{account.number}</span> : ''}</h2>
+          {account.motto && <p style={{ color: 'var(--accent)', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.1em' }}>“{account.motto}”</p>}
+          <p>
+            {account.name ? `${account.name} · ` : ''}
+            {account.country ? `${account.country} · ` : ''}
+            {account.fanSince ? `fan since ${account.fanSince} · ` : ''}
+            {account.goat ? `GOAT: ${account.goat} · ` : ''}
+            signed in everywhere · picks, points, team and drivers follow this ID.
+          </p>
           <div className="fav-stats" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
             <div className="fav-stat"><div className="v" style={{ color: 'var(--amber)' }}>{scored?.total ?? 0}</div><div className="l">Paddock Points</div></div>
             <div className="fav-stat"><div className="v">{Object.keys(account.predictions || {}).length}</div><div className="l">Rounds Predicted</div></div>

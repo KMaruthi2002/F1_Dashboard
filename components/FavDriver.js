@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Panel from './Panel';
-import { teamByConstructorId, hiResHeadshot, teamLogoUrl } from '@/lib/teams';
+import { teamByConstructorId, hiResHeadshot, teamLogoUrl, flagFor } from '@/lib/teams';
 
 function DriverCard({ standing, lastRace }) {
   const [career, setCareer] = useState(null);
@@ -87,6 +87,16 @@ export default function FavDriver({ profile, standings, lastRace, onEdit }) {
 
   return (
     <Panel kicker="§ 09 · GARAGE" title="Your Garage" sub={`${teamStanding ? '1 team · ' : ''}${cards.length} driver${cards.length === 1 ? '' : 's'}`}>
+      {(profile?.number || profile?.country || profile?.fanSince || profile?.goat || profile?.motto) && (
+        <div className="id-strip">
+          {profile.number && <span className="me-plate">#{profile.number}</span>}
+          {profile.name && <span><b>{profile.name}</b></span>}
+          {profile.country && <span>{flagFor(profile.country)} <b>{profile.country}</b></span>}
+          {profile.fanSince && <span>FAN SINCE <b>{profile.fanSince}</b></span>}
+          {profile.goat && <span>GOAT <b>{profile.goat}</b></span>}
+          {profile.motto && <span style={{ color: 'var(--accent)' }}>“{profile.motto}”</span>}
+        </div>
+      )}
       {teamStanding && team && (
         <div className="st-row teams" style={{ '--row-color': team.color, marginBottom: 16 }}>
           {logo ? (

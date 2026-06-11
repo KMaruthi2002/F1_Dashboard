@@ -65,8 +65,10 @@ export default function Hero({ nextRace, profile, season }) {
         <div className="hero-speedlines" />
         <div className="hero-greeting">
           {greeting}
-          {profile?.name ? <>, <span className="name">{profile.name}</span></> : ''} · telemetry uplink active
+          {profile?.name ? <>, <span className="name">{profile.name}</span></> : ''}
+          {profile?.number ? <> <span className="name">#{profile.number}</span></> : ''} · telemetry uplink active
         </div>
+        {profile?.motto && <div className="hero-motto">“{profile.motto}”</div>}
         {seasonOver ? (
           <>
             <div className="hero-round-badge">SEASON {season || ''} · COMPLETE</div>

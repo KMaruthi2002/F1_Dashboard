@@ -13,7 +13,7 @@ function fmtT(iso) {
     : '—';
 }
 
-export default function Calendar({ schedule, nextRound, liveRace }) {
+export default function Calendar({ schedule, nextRound, liveRace, favCircuitId }) {
   const races = schedule?.races || [];
   const [openRound, setOpenRound] = useState(null);
   const [roundData, setRoundData] = useState({});
@@ -43,15 +43,17 @@ export default function Calendar({ schedule, nextRound, liveRace }) {
               const done = new Date(r.race).getTime() < Date.now() - 4 * 3600e3;
               const isNext = r.round === nextRound;
               const isLive = liveRace && r.round === nextRound && liveRace.live;
+              const isMine = favCircuitId && r.circuitId === favCircuitId;
               return (
                 <button
                   key={r.round}
-                  className={`cal-tile ${isLive ? 'live' : isNext ? 'next' : ''} ${done ? 'done' : ''}`}
+                  className={`cal-tile ${isLive ? 'live' : isNext ? 'next' : ''} ${done ? 'done' : ''} ${isMine ? 'mine' : ''}`}
                   onClick={() => (isLive ? (window.location.href = '/live') : toggle(r, done))}
                 >
                   <span className="ct-round">RD {String(r.round).padStart(2, '0')}</span>
                   {isLive ? <span className="ct-tag t-live">◉ LIVE</span>
                     : isNext ? <span className="ct-tag t-next">NEXT</span>
+                    : isMine ? <span className="ct-tag t-mine">⟡ YOURS</span>
                     : done ? <span className="ct-tag t-done">✓</span> : null}
                   <div className="ct-flag">
                     {flagUrl(r.country) ? (

@@ -139,7 +139,8 @@ export default function Gate({ children }) {
       <ProfileModal
         drivers={standings?.drivers || []}
         constructors={standings?.constructors || []}
-        initial={{ name: account.name, teamId: account.teamId, drivers: account.drivers }}
+        circuits={schedule?.races || []}
+        initial={account}
         onSave={async (p) => { await updateProfile(p); setCustomizing(false); }}
         onClose={() => setCustomizing(false)}
       />
