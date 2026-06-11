@@ -269,6 +269,7 @@ export default function ReplayCenter() {
               ref={mapRef}
               bounds={meta?.bounds}
               outline={meta?.outline}
+              pitLane={meta?.pitLane}
               drivers={meta?.drivers}
               sourceYear={meta?.year}
             />

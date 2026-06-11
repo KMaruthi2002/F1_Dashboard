@@ -7,7 +7,7 @@ const PAD = 60;
 const W = 1000;
 
 export default function TrackMap({ track, grid, selected, onSelect }) {
-  const { path, dots, H } = useMemo(() => {
+  const { path, pitPath, dots, H } = useMemo(() => {
     const b = track?.bounds;
     if (!b || !(track?.outline || []).length) return { path: '', dots: [], H: 700 };
 
@@ -20,6 +20,11 @@ export default function TrackMap({ track, grid, selected, onSelect }) {
 
     const pts = track.outline.map(([x, y]) => `${mx(x).toFixed(1)},${my(y).toFixed(1)}`);
     const path = `M${pts.join(' L')} Z`;
+    let pitPath = '';
+    if ((track.pitLane || []).length > 5) {
+      const pp = track.pitLane.map(([x, y]) => `${mx(x).toFixed(1)},${my(y).toFixed(1)}`);
+      pitPath = `M${pp.join(' L')}`;
+    }
 
     const byNum = new Map((grid || []).map((g) => [+g.number, g]));
     const dots = (track.cars || []).map((c) => {
@@ -35,7 +40,7 @@ export default function TrackMap({ track, grid, selected, onSelect }) {
       };
     });
 
-    return { path, dots, H };
+    return { path, pitPath, dots, H };
   }, [track, grid]);
 
   if (!path) {
@@ -48,6 +53,7 @@ export default function TrackMap({ track, grid, selected, onSelect }) {
         {track.mode === 'LIVE' ? '◉ LIVE GPS' : `▸ REPLAY${track.sourceYear ? ` · ${track.sourceYear}` : ''} · FINAL LAPS`}
       </span>
       <svg className="trackmap" viewBox={`0 0 ${W} ${H}`} xmlns="http://www.w3.org/2000/svg">
+        {pitPath && <path className="pitlane" d={pitPath} />}
         <path className="outline-glow" d={path} />
         <path className="outline" d={path} />
         {dots.map((d) => (

@@ -8,7 +8,7 @@ const W = 1000;
 
 // Imperative track map: positions are written straight to the DOM at 60fps
 // (no React re-render per frame), labels travel with their cars.
-const ReplayMap = forwardRef(function ReplayMap({ bounds, outline, drivers, sourceYear, badge, badgeLive }, ref) {
+const ReplayMap = forwardRef(function ReplayMap({ bounds, outline, pitLane, drivers, sourceYear, badge, badgeLive }, ref) {
   const gRefs = useRef(new Map());
 
   const geo = useMemo(() => {
@@ -19,8 +19,13 @@ const ReplayMap = forwardRef(function ReplayMap({ bounds, outline, drivers, sour
     const mx = (x) => PAD + ((x - bounds.minX) / rx) * (W - 2 * PAD);
     const my = (y) => H - PAD - ((y - bounds.minY) / ry) * (H - 2 * PAD);
     const pts = outline.map(([x, y]) => `${mx(x).toFixed(1)},${my(y).toFixed(1)}`);
-    return { H, mx, my, path: `M${pts.join(' L')} Z` };
-  }, [bounds, outline]);
+    let pitPath = '';
+    if ((pitLane || []).length > 5) {
+      const pp = pitLane.map(([x, y]) => `${mx(x).toFixed(1)},${my(y).toFixed(1)}`);
+      pitPath = `M${pp.join(' L')}`; // open path: entry → box → exit
+    }
+    return { H, mx, my, path: `M${pts.join(' L')} Z`, pitPath };
+  }, [bounds, outline, pitLane]);
 
   useImperativeHandle(ref, () => ({
     setPositions(posMap, pitSet) {
@@ -50,6 +55,7 @@ const ReplayMap = forwardRef(function ReplayMap({ bounds, outline, drivers, sour
         {badge || `▸ REPLAY${sourceYear ? ` · ${sourceYear}` : ''} · FULL RACE`}
       </span>
       <svg className="trackmap" viewBox={`0 0 ${W} ${geo.H}`} xmlns="http://www.w3.org/2000/svg">
+        {geo.pitPath && <path className="pitlane" d={geo.pitPath} />}
         <path className="outline-glow" d={geo.path} />
         <path className="outline" d={geo.path} />
         {(drivers || []).map((d) => {

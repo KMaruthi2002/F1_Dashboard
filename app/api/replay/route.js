@@ -111,21 +111,40 @@ export async function GET(req) {
     if (!resolved) return json({ ok: false, reason: 'no GPS available for that circuit yet', rounds: completedRounds }, 300);
     const { session, drivers } = resolved;
 
-    // circuit geometry for this exact session
-    const outlinePts = await findOutline(session, drivers);
-    let outline = [];
-    let bounds = null;
-    if (outlinePts) {
-      const xs = outlinePts.map((p) => p.x); const ys = outlinePts.map((p) => p.y);
-      bounds = { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
-      const step = Math.max(1, Math.floor(outlinePts.length / 420));
-      outline = outlinePts.filter((_, i) => i % step === 0).map((p) => [p.x, p.y]);
-    }
-
     const [raceControl, pitsRaw] = await Promise.all([
       openf1(`/race_control?session_key=${session.session_key}`, 3600).catch(() => []),
       openf1(`/pit?session_key=${session.session_key}`, 3600).catch(() => []),
     ]);
+
+    // circuit geometry for this exact session
+    const outlinePts = await findOutline(session, drivers);
+    let outline = [];
+    if (outlinePts) {
+      const step = Math.max(1, Math.floor(outlinePts.length / 420));
+      outline = outlinePts.filter((_, i) => i % step === 0).map((p) => [p.x, p.y]);
+    }
+
+    // pit lane geometry: trace a car's GPS through one of its actual stops
+    let pitLane = [];
+    for (const p of (Array.isArray(pitsRaw) ? pitsRaw : [])) {
+      if (!p.pit_duration || p.pit_duration > 90) continue;
+      const t0 = new Date(p.date).getTime() - 6e3;
+      const t1 = new Date(p.date).getTime() + p.pit_duration * 1000 + 14e3;
+      const pts = await trace(session.session_key, p.driver_number, t0, t1);
+      if (pts.length > 15) {
+        const step = Math.max(1, Math.floor(pts.length / 90));
+        pitLane = pts.filter((_, i) => i % step === 0).map((q) => [q.x, q.y]);
+        break;
+      }
+    }
+
+    // bounds cover both the track and the pit lane so nothing renders outside
+    let bounds = null;
+    const allPts = [...(outlinePts || []).map((p) => [p.x, p.y]), ...pitLane];
+    if (allPts.length) {
+      const xs = allPts.map((p) => p[0]); const ys = allPts.map((p) => p[1]);
+      bounds = { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+    }
 
     return json({
       ok: true,
@@ -141,6 +160,7 @@ export async function GET(req) {
       dateEnd: session.date_end,
       bounds,
       outline,
+      pitLane,
       drivers: (drivers || []).map((d) => ({
         n: d.driver_number, acr: d.name_acronym, name: d.full_name,
         team: d.team_name, colour: d.team_colour,

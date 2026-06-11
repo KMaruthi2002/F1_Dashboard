@@ -92,6 +92,7 @@ export default function RaceCenter() {
               <LiveTrackMap
                 bounds={track.bounds}
                 outline={track.outline}
+                pitLane={track.pitLane}
                 sessionKey={live.session.key}
                 drivers={grid.map((g) => ({ n: g.number, acr: g.acronym, team: g.team, colour: g.teamColour }))}
               />

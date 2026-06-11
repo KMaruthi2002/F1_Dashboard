@@ -1382,3 +1382,12 @@ body {
 }
 .gs-card-row.gs-chips { gap: 14px; flex-wrap: wrap; min-height: 44px; }
 .gs-steps { display: flex; gap: 6px; margin-top: 18px; flex-wrap: wrap; }
+
+/* ── Pit lane on track maps ── */
+.trackmap .pitlane {
+  fill: none;
+  stroke: rgba(255, 179, 0, 0.4);
+  stroke-width: 7;
+  stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 12 9;
+}

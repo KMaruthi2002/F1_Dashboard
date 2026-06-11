@@ -10,7 +10,7 @@ const DELAY_MS = 30e3;
 const CHUNK_S = 30;
 const POLL_MS = 10e3;
 
-export default function LiveTrackMap({ bounds, outline, sessionKey, drivers }) {
+export default function LiveTrackMap({ bounds, outline, pitLane, sessionKey, drivers }) {
   const mapRef = useRef(null);
   const buf = useRef({ tracks: new Map(), end: 0 });
   const fetching = useRef(false);
@@ -59,6 +59,7 @@ export default function LiveTrackMap({ bounds, outline, sessionKey, drivers }) {
       ref={mapRef}
       bounds={bounds}
       outline={outline}
+      pitLane={pitLane}
       drivers={drivers}
       badge="◉ LIVE · SMOOTH FEED · ~30s"
       badgeLive

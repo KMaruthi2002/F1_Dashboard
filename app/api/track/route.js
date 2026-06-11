@@ -58,12 +58,34 @@ export async function GET() {
     }
 
     let outline = [];
-    let bounds = null;
     if (outlinePts) {
-      const xs = outlinePts.map((p) => p.x); const ys = outlinePts.map((p) => p.y);
-      bounds = { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
       const step = Math.max(1, Math.floor(outlinePts.length / 420));
       outline = outlinePts.filter((_, i) => i % step === 0).map((p) => [p.x, p.y]);
+    }
+
+    // pit lane geometry from a real stop in the outline-source session
+    let pitLane = [];
+    try {
+      const pitsRaw = await openf1(`/pit?session_key=${sourceSession.session_key}`, 21600).catch(() => []);
+      for (const p of Array.isArray(pitsRaw) ? pitsRaw : []) {
+        if (!p.pit_duration || p.pit_duration > 90) continue;
+        const t0 = new Date(p.date).getTime() - 6e3;
+        const t1 = new Date(p.date).getTime() + p.pit_duration * 1000 + 14e3;
+        const pts = await trace(sourceSession.session_key, p.driver_number, t0, t1, 21600);
+        if (pts.length > 15) {
+          const step = Math.max(1, Math.floor(pts.length / 90));
+          pitLane = pts.filter((_, i) => i % step === 0).map((q) => [q.x, q.y]);
+          break;
+        }
+      }
+    } catch { /* best effort */ }
+
+    // bounds cover track + pit lane
+    let bounds = null;
+    const allPts = [...(outlinePts || []).map((p) => [p.x, p.y]), ...pitLane];
+    if (allPts.length) {
+      const xs = allPts.map((p) => p[0]); const ys = allPts.map((p) => p[1]);
+      bounds = { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
     }
 
     // ── 2) car dots ──
@@ -113,6 +135,7 @@ export async function GET() {
       sourceYear: sourceSession?.year,
       bounds,
       outline,
+      pitLane,
       cars: dots,
     }, mode === 'LIVE' ? 10 : 600);
   } catch (e) {
