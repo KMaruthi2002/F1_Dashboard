@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAuth } from './AuthProvider';
 
 export default function AccountModal({ onClose, onEditProfile }) {
-  const { account, scored, needsBlob, register, login, logout, creds, changePassword } = useAuth();
+  const { account, scored, needsBlob, register, login, logout, creds, changePassword, updateProfile } = useAuth();
   const [tab, setTab] = useState('login');
   const [showCode, setShowCode] = useState(false);
   const [handle, setHandle] = useState('');
@@ -30,6 +30,13 @@ export default function AccountModal({ onClose, onEditProfile }) {
     const d = await login(handle.trim(), code.trim());
     setBusy(false);
     if (!d.ok) setMsg(d.error || (d.needsBlob ? 'Cloud accounts not configured yet (Vercel Blob).' : 'Failed'));
+  };
+
+  const doSaveEmail = async () => {
+    setPwMsg(null);
+    const d = await updateProfile({ email: name.trim() });
+    setPwMsg(d.ok ? '✓ Recovery email saved' : `✗ ${d.error || 'Failed'}`);
+    if (d.ok) setName('');
   };
 
   const doChangePassword = async () => {
@@ -71,8 +78,22 @@ export default function AccountModal({ onClose, onEditProfile }) {
               )}
             </>
           )}
-          {/* change password */}
+          {/* recovery email */}
           <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+            <input
+              type="email"
+              placeholder={account.emailSet ? `RECOVERY EMAIL · ${account.emailMasked}` : 'ADD RECOVERY EMAIL (for forgot password)'}
+              value={name} maxLength={80} style={{ flex: 1 }}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && name.includes('@') && doSaveEmail()}
+            />
+            <button className="btn-ghost" style={{ marginTop: 0, width: 'auto', padding: '0 16px' }}
+              disabled={!name.includes('@')} onClick={doSaveEmail}>
+              {account.emailSet ? '⟳ Update' : '+ Add'}
+            </button>
+          </div>
+          {/* change password */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
             <input
               type="password" placeholder="NEW PASSWORD (min 6)" value={newPw} maxLength={64}
               style={{ flex: 1 }}

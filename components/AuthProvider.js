@@ -41,8 +41,8 @@ export default function AuthProvider({ children }) {
 
   const persist = (c) => { try { localStorage.setItem(LS_KEY, JSON.stringify(c)); } catch {} };
 
-  const register = useCallback(async (handle, name, password) => {
-    const d = await api({ action: 'register', handle, name, password });
+  const register = useCallback(async (handle, name, password, email) => {
+    const d = await api({ action: 'register', handle, name, password, email });
     if (d.needsBlob) { setNeedsBlob(true); return d; }
     if (d.ok) {
       const c = { handle, code: password || d.code };
@@ -72,6 +72,14 @@ export default function AuthProvider({ children }) {
     }
     return d;
   }, []);
+
+  const forgot = useCallback(async (handle) => api({ action: 'forgot', handle }), []);
+
+  const resetPassword = useCallback(async (handle, resetCode, newPassword) => {
+    const d = await api({ action: 'reset', handle, resetCode, newPassword });
+    if (!d.ok) return d;
+    return login(handle, newPassword); // straight back into the garage
+  }, [login]);
 
   const logout = useCallback(() => {
     setCreds(null); setProfile(null); setScored(null);
@@ -105,6 +113,7 @@ export default function AuthProvider({ children }) {
     scored,                   // {rounds: {round: {points, settled, detail}}, total}
     needsBlob,                // true → Blob store not configured yet
     register, login, logout, updateProfile, savePrediction, refresh, changePassword,
+    forgot, resetPassword,
   };
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;

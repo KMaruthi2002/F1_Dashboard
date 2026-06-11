@@ -66,14 +66,20 @@ const FEATURES = [
 
 export default function Gate({ children }) {
   const pathname = usePathname();
-  const { ready, account, needsBlob, register, login, updateProfile } = useAuth();
+  const { ready, account, needsBlob, register, login, updateProfile, forgot, resetPassword } = useAuth();
   const [guest, setGuest] = useState(false);
   const [guestLoaded, setGuestLoaded] = useState(false);
   const [tab, setTab] = useState('create');
   const [handle, setHandle] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
+  // forgot-password flow
+  const [forgotMode, setForgotMode] = useState(false);
+  const [fStage, setFStage] = useState('send'); // send → code
+  const [fCode, setFCode] = useState('');
+  const [fNewPw, setFNewPw] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
   const [newCode, setNewCode] = useState(null);
@@ -104,7 +110,7 @@ export default function Gate({ children }) {
 
   const doRegister = async () => {
     setBusy(true); setMsg(null);
-    const d = await register(handle.trim(), name.trim(), password);
+    const d = await register(handle.trim(), name.trim(), password, email.trim() || undefined);
     setBusy(false);
     if (d.ok) {
       if (d.code) setNewCode(d.code);   // legacy: server-generated code
@@ -118,6 +124,21 @@ export default function Gate({ children }) {
     const d = await login(handle.trim(), code.trim());
     setBusy(false);
     if (!d.ok) setMsg(d.error || (d.needsBlob ? 'Cloud accounts are warming up · continue as guest below.' : 'Failed'));
+  };
+
+  const doForgot = async () => {
+    setBusy(true); setMsg(null);
+    const d = await forgot(handle.trim());
+    setBusy(false);
+    if (d.ok) { setFStage('code'); setMsg(d.message || 'Check your inbox for the code.'); }
+    else setMsg(d.error || 'Failed');
+  };
+
+  const doReset = async () => {
+    setBusy(true); setMsg(null);
+    const d = await resetPassword(handle.trim(), fCode.trim(), fNewPw);
+    setBusy(false);
+    if (!d.ok) setMsg(d.error || 'Failed'); // on success login() flips `account` and the gate opens
   };
 
   const enterAsGuest = () => {
@@ -234,8 +255,43 @@ export default function Gate({ children }) {
                 onChange={(e) => setName(e.target.value)} />
               <div style={{ height: 10 }} />
               <input type="password" placeholder="PASSWORD (min 6 chars)" value={password} maxLength={64}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)} />
+              <div style={{ height: 10 }} />
+              <input type="email" placeholder="EMAIL (optional · enables password recovery)" value={email} maxLength={80}
+                onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && armed && doRegister()} />
+            </>
+          ) : forgotMode ? (
+            <>
+              <h2 className="landing-h2">Pit lane rescue</h2>
+              {fStage === 'send' ? (
+                <>
+                  <p className="landing-p">Enter your Paddock ID · if it has an email on file, we&apos;ll send a 6-digit reset code.</p>
+                  <input type="text" placeholder="PADDOCK ID" value={handle} maxLength={16}
+                    onChange={(e) => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+                    onKeyDown={(e) => e.key === 'Enter' && handle.trim().length >= 3 && doForgot()} />
+                  <button className="btn-primary" disabled={busy || handle.trim().length < 3} onClick={doForgot}>
+                    {busy ? 'Radioing the pit wall…' : '📨 Send reset code'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="landing-p">Code sent to the email on file for <b style={{ color: 'var(--accent)' }}>@{handle}</b> · valid 15 minutes.</p>
+                  <input type="text" inputMode="numeric" placeholder="6-DIGIT CODE" value={fCode} maxLength={6}
+                    onChange={(e) => setFCode(e.target.value.replace(/\D/g, ''))} />
+                  <div style={{ height: 10 }} />
+                  <input type="password" placeholder="NEW PASSWORD (min 6)" value={fNewPw} maxLength={64}
+                    onChange={(e) => setFNewPw(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && fCode.length === 6 && fNewPw.length >= 6 && doReset()} />
+                  <button className="btn-primary" disabled={busy || fCode.length !== 6 || fNewPw.length < 6} onClick={doReset}>
+                    {busy ? 'Refuelling…' : '🏁 Reset & sign in'}
+                  </button>
+                  <button className="btn-ghost" onClick={doForgot} disabled={busy}>Resend code</button>
+                </>
+              )}
+              <button className="landing-guest" onClick={() => { setForgotMode(false); setFStage('send'); setMsg(null); }}>
+                ‹ back to sign in
+              </button>
             </>
           ) : (
             <>
@@ -247,23 +303,30 @@ export default function Gate({ children }) {
               <input type="password" placeholder="PASSWORD / GARAGE CODE" value={code} maxLength={64}
                 onChange={(e) => setCode(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && doLogin()} />
+              <button className="landing-guest" style={{ marginTop: 8 }} onClick={() => { setForgotMode(true); setMsg(null); }}>
+                forgot password? ›
+              </button>
             </>
           )}
 
           {/* start lights: fill as you type, green when armed */}
-          <div className="gate-lights" aria-hidden="true">
-            {[...Array(5)].map((_, i) => (
-              <span key={i} className={`gl ${armed ? 'green' : i < lights ? 'on' : ''}`} />
-            ))}
-          </div>
+          {!forgotMode && (
+            <>
+              <div className="gate-lights" aria-hidden="true">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className={`gl ${armed ? 'green' : i < lights ? 'on' : ''}`} />
+                ))}
+              </div>
 
-          <button
-            className="btn-primary" style={{ marginTop: 10 }}
-            disabled={busy || !armed}
-            onClick={tab === 'create' ? doRegister : doLogin}
-          >
-            {busy ? 'On the formation lap…' : armed ? (tab === 'create' ? '🏁 LIGHTS OUT · CREATE MY ID' : '🏁 LIGHTS OUT · SIGN IN') : 'Fill the grid above…'}
-          </button>
+              <button
+                className="btn-primary" style={{ marginTop: 10 }}
+                disabled={busy || !armed}
+                onClick={tab === 'create' ? doRegister : doLogin}
+              >
+                {busy ? 'On the formation lap…' : armed ? (tab === 'create' ? '🏁 LIGHTS OUT · CREATE MY ID' : '🏁 LIGHTS OUT · SIGN IN') : 'Fill the grid above…'}
+              </button>
+            </>
+          )}
 
           {msg && <p style={{ color: 'var(--red)', marginTop: 12, fontSize: 14 }}>{msg}</p>}
           {needsBlob && (

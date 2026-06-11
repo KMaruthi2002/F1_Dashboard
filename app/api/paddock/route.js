@@ -1,6 +1,7 @@
 import {
   hasBlob, sha, makeGarageCode, validHandle,
   getUser, putUser, listUsers, scorePredictions, getRoundTimes,
+  hasEmail, validEmail, maskEmail, makeResetCode, sendResetEmail,
 } from '@/lib/paddock';
 import { json } from '@/lib/f1';
 
@@ -32,6 +33,8 @@ const publicProfile = (u) => {
     fanSince: u.fanSince || null,         // year they fell for F1
     motto: u.motto || '',                 // short tagline
     goat: u.goat || '',                   // their GOAT
+    emailSet: !!u.email,                  // recovery email on file (never exposed raw)
+    emailMasked: maskEmail(u.email),
     predictions: u.predictions || {}, createdAt: u.createdAt,
   };
 };
@@ -123,8 +126,46 @@ export async function POST(req) {
 
     if (!hasBlob()) return json({ ok: false, needsBlob: true }, 0);
 
+    if (action === 'forgot') {
+      const { handle } = body;
+      if (!hasEmail()) return err('Recovery email is not configured yet', 503);
+      // always answer generically — never confirm whether a handle/email exists
+      const generic = json({ ok: true, message: 'If that Paddock ID has an email on file, a reset code is on its way.' }, 0);
+      if (!validHandle(handle)) return generic;
+      const user = await getUser(handle);
+      if (!user?.email) return generic;
+      if (user.resetSentAt && Date.now() - user.resetSentAt < 60e3) {
+        return err('A code was just sent — check your inbox, retry in a minute', 429);
+      }
+      const resetCode = makeResetCode();
+      user.resetHash = sha(resetCode);
+      user.resetExpiry = Date.now() + 15 * 60e3;
+      user.resetSentAt = Date.now();
+      const sent = await sendResetEmail(user.email, resetCode, user.handle);
+      if (!sent) return err('Could not send the email — try again shortly', 502);
+      await putUser(user);
+      return generic;
+    }
+
+    if (action === 'reset') {
+      const { handle, resetCode, newPassword } = body;
+      if (!validHandle(handle) || !resetCode) return err('Invalid reset request');
+      if (typeof newPassword !== 'string' || newPassword.length < 6 || newPassword.length > 64) {
+        return err('New password must be 6–64 characters');
+      }
+      const user = await getUser(handle);
+      if (!user?.resetHash || !user.resetExpiry || Date.now() > user.resetExpiry) {
+        return err('Reset code expired — request a new one', 410);
+      }
+      if (user.resetHash !== sha(String(resetCode).trim())) return err('Wrong reset code', 401);
+      user.codeHash = sha(newPassword);
+      delete user.resetHash; delete user.resetExpiry; delete user.resetSentAt;
+      await putUser(user);
+      return json({ ok: true }, 0);
+    }
+
     if (action === 'register') {
-      const { handle, name, drivers, teamId, password } = body;
+      const { handle, name, drivers, teamId, password, email } = body;
       if (!validHandle(handle)) return err('Handle must be 3–16 letters, numbers or _');
       if (password !== undefined && (typeof password !== 'string' || password.length < 6 || password.length > 64)) {
         return err('Password must be 6–64 characters');
@@ -136,6 +177,7 @@ export async function POST(req) {
       const user = {
         handle, codeHash: sha(code),
         name: (name || '').slice(0, 24),
+        email: validEmail(email) ? email : null,
         drivers: cleanDrivers(drivers) || [],
         teamId: teamId || null,
         predictions: {},
@@ -176,6 +218,11 @@ export async function POST(req) {
       const user = await auth(body);
       if (!user) return err('Session invalid', 401);
       applyIdentity(user, body);
+      if (body.email !== undefined) {
+        if (body.email === '' || body.email === null) user.email = null;
+        else if (validEmail(body.email)) user.email = body.email;
+        else return err('That email does not look right');
+      }
       if (body.driverId !== undefined) user.drivers = cleanDrivers([body.driverId, ...(user.drivers || [])]);
       if (body.drivers !== undefined) user.drivers = cleanDrivers(body.drivers) || [];
       if (body.teamId !== undefined) user.teamId = body.teamId;
