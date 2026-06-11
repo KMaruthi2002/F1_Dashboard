@@ -11,6 +11,8 @@ import ProfileModal from './ProfileModal';
 import SectionNav from './SectionNav';
 import DriverDrawer from './DriverDrawer';
 import HeadToHead from './HeadToHead';
+import AccountModal from './AccountModal';
+import { useAuth } from './AuthProvider';
 import { teamByConstructorId } from '@/lib/teams';
 
 const LS_KEY = 'apex.profile.v1';
@@ -74,6 +76,7 @@ function ToTop() {
 }
 
 export default function Dashboard() {
+  const { account, scored, updateProfile } = useAuth();
   const [booted, setBooted] = useState(false);
   const [standings, setStandings] = useState(null);
   const [schedule, setSchedule] = useState(null);
@@ -81,6 +84,7 @@ export default function Dashboard() {
   const [live, setLive] = useState(null);
   const [profile, setProfile] = useState(undefined);
   const [showProfile, setShowProfile] = useState(false);
+  const [showAccount, setShowAccount] = useState(false);
   const [drawerDriver, setDrawerDriver] = useState(null);
   const [lastSync, setLastSync] = useState(null);
   const clock = useClock();
@@ -102,7 +106,15 @@ export default function Dashboard() {
     setProfile(p);
     setShowProfile(false);
     try { localStorage.setItem(LS_KEY, JSON.stringify(p)); } catch {}
-  }, []);
+    // signed in → sync name + driver to the cloud account too
+    if (account) updateProfile({ name: p.name, driverId: p.driverId });
+  }, [account, updateProfile]);
+
+  // effective identity: cloud account wins over local guest profile
+  const effProfile = useMemo(() => {
+    if (account) return { name: account.name || account.handle, driverId: account.driverId || profile?.driverId };
+    return profile;
+  }, [account, profile]);
 
   useEffect(() => {
     if (booted && profile === null) setShowProfile(true);
@@ -149,8 +161,8 @@ export default function Dashboard() {
   }, [schedule]);
 
   const favStanding = useMemo(
-    () => (standings?.drivers || []).find((d) => d.driverId === profile?.driverId),
-    [standings, profile]
+    () => (standings?.drivers || []).find((d) => d.driverId === effProfile?.driverId),
+    [standings, effProfile]
   );
 
   // car number → headshot URL (for avatars across the dashboard)
@@ -201,8 +213,8 @@ export default function Dashboard() {
             {clock ? clock.toLocaleTimeString(undefined, { hour12: false }) : '--:--:--'}
           </span>
           {lastSync && <span className="hide-sm">SYNC {lastSync.toLocaleTimeString(undefined, { hour12: false })}</span>}
-          <button onClick={() => setShowProfile(true)}>
-            {profile?.name ? `⟡ ${profile.name}` : '⟡ Profile'}
+          <button onClick={() => setShowAccount(true)}>
+            {account ? `⟡ ${account.handle} · ${scored?.total ?? 0} PP` : effProfile?.name ? `⟡ ${effProfile.name}` : '⟡ Sign in'}
           </button>
         </header>
 
@@ -216,28 +228,30 @@ export default function Dashboard() {
         </div>
         <div className="kerb" style={{ margin: '0 calc(-1 * clamp(14px, 3vw, 40px))' }} />
 
-        {/* live session banner → Race Center */}
-        <div className="live-banner" style={!live?.live ? { animation: 'none', borderColor: 'var(--line)', background: 'rgba(255,255,255,0.02)' } : undefined}>
-          <div>
-            <div className="lb-title">{live?.live ? '◉ Session in progress' : 'Race Center'}</div>
-            <div className="lb-sub">
-              {live?.session
-                ? `${live.session.name} · ${live.session.circuit}, ${live.session.country} ${live?.live ? '— live GPS, lap times, tires, onboard telemetry' : '— replay the last session in full telemetry'}`
-                : 'track map · lap times · sectors · tires · onboard channels'}
+        {/* mission tiles — the hub */}
+        <div className="mission-tiles">
+          <a className="mission-tile" href="/live" style={{ '--tile-color': live?.live ? 'var(--green)' : 'var(--cyan)' }}>
+            {live?.live && <span className="mt-live">◉ LIVE</span>}
+            <span className="mt-icon">📡</span>
+            <div className="mt-title">Live Center</div>
+            <div className="mt-desc">
+              {live?.session ? `${live.session.name} · ${live.session.circuit}` : 'Track map'} · GPS · laps · tires · onboard
             </div>
-          </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <a className={`btn-race-center ${live?.live ? '' : 'idle'}`} href="/live" style={{ marginLeft: 0 }}>
-              {live?.live ? '◉ Enter Race Center' : '▸ Open Race Center'}
-            </a>
-            <a className="btn-race-center idle" href="/replay" style={{ marginLeft: 0 }}>
-              ⟲ Race Replay
-            </a>
-          </div>
+          </a>
+          <a className="mission-tile" href="/replay" style={{ '--tile-color': 'var(--amber)' }}>
+            <span className="mt-icon">⟲</span>
+            <div className="mt-title">Race Replay</div>
+            <div className="mt-desc">Time machine · scrub any moment · incident alerts + official footage</div>
+          </a>
+          <a className="mission-tile" href="/paddock" style={{ '--tile-color': '#c084fc' }}>
+            <span className="mt-icon">🏆</span>
+            <div className="mt-title">The Paddock</div>
+            <div className="mt-desc">Drag your podium call · earn Paddock Points · global leaderboard</div>
+          </a>
         </div>
 
         <div id="command">
-          <Hero nextRace={nextRace} profile={profile} season={schedule?.season} />
+          <Hero nextRace={nextRace} profile={effProfile} season={schedule?.season} />
         </div>
 
         <div id="live" className="section fade-in">
@@ -245,7 +259,7 @@ export default function Dashboard() {
         </div>
 
         <div id="championship" className="grid-2 fade-in">
-          <DriverStandings standings={standings} favDriverId={profile?.driverId} onSelect={setDrawerDriver} headshots={headshotByNum} />
+          <DriverStandings standings={standings} favDriverId={effProfile?.driverId} onSelect={setDrawerDriver} headshots={headshotByNum} />
           <ConstructorStandings standings={standings} />
         </div>
 
@@ -269,7 +283,7 @@ export default function Dashboard() {
         <div id="pilot" className="grid-2 fade-in">
           <QualiRecap lastRace={lastRace} />
           <FavDriver
-            profile={profile}
+            profile={effProfile}
             standings={standings}
             lastRace={lastRace}
             onEdit={() => setShowProfile(true)}
@@ -290,10 +304,14 @@ export default function Dashboard() {
         <DriverDrawer
           driver={drawerDriver}
           lastRace={lastRace}
-          isFavourite={profile?.driverId === drawerDriver.driverId}
-          onFavourite={(driverId) => { saveProfile({ ...(profile || {}), driverId }); setDrawerDriver(null); }}
+          isFavourite={effProfile?.driverId === drawerDriver.driverId}
+          onFavourite={(driverId) => { saveProfile({ ...(effProfile || {}), driverId }); setDrawerDriver(null); }}
           onClose={() => setDrawerDriver(null)}
         />
+      )}
+
+      {showAccount && (
+        <AccountModal onClose={() => setShowAccount(false)} onEditProfile={() => setShowProfile(true)} />
       )}
 
       {showProfile && profile !== undefined && (

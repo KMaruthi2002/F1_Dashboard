@@ -1,5 +1,6 @@
 import './globals.css';
 import { Analytics } from '@vercel/analytics/react';
+import AuthProvider from '@/components/AuthProvider';
 import { Orbitron, Rajdhani, Share_Tech_Mono } from 'next/font/google';
 
 const orbitron = Orbitron({ subsets: ['latin'], weight: ['500', '700', '900'], variable: '--f-orbitron' });
@@ -29,7 +30,7 @@ export default function RootLayout({ children }) {
     <html lang="en" className={`${orbitron.variable} ${rajdhani.variable} ${mono.variable}`}>
       <body>
         <div className="atmosphere" />
-        {children}
+        <AuthProvider>{children}</AuthProvider>
         <div className="vignette" />
         <div className="scanlines" />
         <Analytics />

@@ -1042,3 +1042,116 @@ body {
   font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.18em; color: var(--text-dim);
 }
 .incident-modal { border-color: rgba(255,46,77,0.55); box-shadow: 0 0 80px rgba(255,46,77,0.25); }
+
+/* ════════════════ THE PADDOCK — prediction garage ════════════════ */
+
+/* car chip: a little CSS race car in team colors */
+.car-chip {
+  position: relative; display: inline-flex; align-items: center; gap: 0;
+  cursor: grab; user-select: none;
+  height: 40px; padding: 0 6px;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.18s;
+}
+.car-chip:active { cursor: grabbing; }
+.car-chip:hover { transform: translateY(-3px) rotate(-2deg); filter: drop-shadow(0 6px 14px color-mix(in srgb, var(--row-color) 45%, transparent)); }
+.car-chip.sel { transform: translateY(-4px) scale(1.08); filter: drop-shadow(0 0 16px color-mix(in srgb, var(--row-color) 70%, transparent)); animation: revUp 0.5s infinite alternate; }
+@keyframes revUp { from { transform: translateY(-4px) scale(1.08) rotate(-1deg); } to { transform: translateY(-4px) scale(1.08) rotate(1deg); } }
+.car-nose {
+  width: 16px; height: 10px; background: var(--row-color);
+  clip-path: polygon(0 50%, 100% 0, 100% 100%);
+}
+.car-code {
+  background: linear-gradient(180deg, var(--row-color), color-mix(in srgb, var(--row-color) 55%, #000));
+  color: #fff; font-family: var(--font-display); font-weight: 900; font-size: 13px;
+  padding: 7px 10px; letter-spacing: 0.06em;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 6px 100%);
+  position: relative;
+}
+.car-code::before, .car-code::after {
+  /* wheels */
+  content: ''; position: absolute; bottom: -5px; width: 10px; height: 10px; border-radius: 50%;
+  background: #0a0c12; border: 2px solid #2a3340;
+}
+.car-code::before { left: 2px; }
+.car-code::after { right: 2px; }
+.car-wing {
+  width: 7px; height: 16px; background: color-mix(in srgb, var(--row-color) 70%, #000);
+  clip-path: polygon(0 0, 100% 15%, 100% 85%, 0 100%);
+}
+.car-chip.small { height: 32px; transform: scale(0.85); }
+.car-chip.ghost { cursor: default; }
+.car-chip.ghost:hover { transform: scale(0.85); filter: none; }
+.chip-used { opacity: 0.28; filter: grayscale(0.7); pointer-events: none; }
+
+.garage-head { display: flex; align-items: baseline; gap: 14px; margin-top: 26px; margin-bottom: 12px; }
+.garage {
+  display: flex; flex-wrap: wrap; gap: 12px 8px;
+  padding: 16px 12px;
+  background: repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0 30px, rgba(255,255,255,0.035) 30px 32px);
+  border: 1px solid var(--line);
+}
+
+/* podium slots */
+.pod-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.pod-slots.minor { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-top: 12px; }
+.pod-slot {
+  position: relative; min-height: 116px; padding: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  background: rgba(255,255,255,0.018);
+  border: 2px dashed var(--text-faint); cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.pod-slot.ready { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); animation: slotPulse 1s infinite; }
+@keyframes slotPulse { 50% { border-color: color-mix(in srgb, var(--accent) 40%, transparent); } }
+.pod-slot.filled {
+  border-style: solid; border-color: var(--row-color);
+  background: color-mix(in srgb, var(--row-color) 9%, transparent);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--row-color) 18%, transparent), inset 0 0 30px color-mix(in srgb, var(--row-color) 8%, transparent);
+  animation: slotLand 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes slotLand { from { transform: scale(0.92); } 60% { transform: scale(1.04); } to { transform: scale(1); } }
+.pod-slot.locked { opacity: 0.5; cursor: not-allowed; border-style: solid; }
+.ps-label { font-family: var(--font-display); font-weight: 900; font-size: 15px; letter-spacing: 0.1em; }
+.ps-driver { font-family: var(--font-ui); font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; }
+.ps-hint { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.16em; color: var(--text-dim); text-transform: uppercase; }
+.ps-sub { font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.12em; color: var(--text-dim); text-transform: uppercase; }
+.pod-slot.filled .ps-hint { display: none; }
+@media (max-width: 640px) { .pod-slots { grid-template-columns: 1fr; } .pod-slot { min-height: 90px; } }
+
+/* account bits */
+.acct-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+.garage-code {
+  font-family: var(--font-display); font-weight: 900; font-size: 32px; letter-spacing: 0.3em;
+  text-align: center; padding: 18px; margin: 8px 0;
+  color: var(--green); background: rgba(57,211,83,0.07); border: 1px dashed rgba(57,211,83,0.5);
+  text-shadow: 0 0 18px rgba(57,211,83,0.5);
+}
+
+/* ── Mission tiles (command deck hub) ── */
+.mission-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 22px; }
+@media (max-width: 800px) { .mission-tiles { grid-template-columns: 1fr; } }
+.mission-tile {
+  position: relative; display: block; text-decoration: none; color: var(--text);
+  padding: 22px 22px 18px; overflow: hidden;
+  background: var(--panel); border: 1px solid var(--line);
+  border-top: 2px solid var(--tile-color, var(--cyan));
+  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+  transition: all 0.22s;
+}
+.mission-tile::after {
+  content: '⟶'; position: absolute; right: 18px; bottom: 12px;
+  font-family: var(--font-mono); color: var(--tile-color, var(--cyan));
+  transition: transform 0.22s;
+}
+.mission-tile:hover { transform: translateY(-4px); background: color-mix(in srgb, var(--tile-color, var(--cyan)) 6%, var(--panel)); box-shadow: 0 12px 40px color-mix(in srgb, var(--tile-color, var(--cyan)) 16%, transparent); }
+.mission-tile:hover::after { transform: translateX(6px); }
+.mission-tile .mt-icon { font-size: 26px; }
+.mission-tile .mt-title { font-family: var(--font-display); font-weight: 900; font-size: 17px; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 10px; color: var(--tile-color, var(--cyan)); }
+.mission-tile .mt-desc { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; color: var(--text-dim); text-transform: uppercase; margin-top: 6px; line-height: 1.7; }
+.mission-tile .mt-live {
+  position: absolute; top: 12px; right: 14px;
+  font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.16em; font-weight: 700;
+  color: #000; background: var(--green); padding: 3px 8px; animation: pipBlink 1.2s infinite;
+}
