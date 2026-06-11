@@ -319,7 +319,13 @@ export default function Paddock() {
                       ? teamByConstructorId(drivers.find((d) => d.driverId === u.driverId)?.constructorId)
                       : null;
                   return (
-                    <div key={u.handle} className="st-row teams" style={{ '--row-color': accentTeam?.color || 'var(--cyan)' }} title={u.motto || ''}>
+                    <a
+                      key={u.handle}
+                      href={`/racer/${u.handle}`}
+                      className="st-row teams clickable"
+                      style={{ '--row-color': accentTeam?.color || 'var(--cyan)', textDecoration: 'none', color: 'inherit' }}
+                      title={u.motto || `View @${u.handle}'s profile`}
+                    >
                       <span className={`pos-plate ${i === 0 ? 'gold' : ''}`}>{i + 1}</span>
                       <span className="st-main">
                         <span className="st-name">
@@ -328,7 +334,7 @@ export default function Paddock() {
                         <span className="st-team">{u.motto || u.name}</span>
                       </span>
                       <span className="st-pts">{u.total}<span className="pts-label">PP</span></span>
-                    </div>
+                    </a>
                   );
                 })}
               </div>

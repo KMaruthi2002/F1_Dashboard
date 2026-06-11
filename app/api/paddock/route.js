@@ -56,10 +56,42 @@ function applyIdentity(user, body) {
 const cleanDrivers = (arr) =>
   Array.isArray(arr) ? [...new Set(arr.filter((d) => typeof d === 'string'))].slice(0, 3) : undefined;
 
-export async function GET() {
-  // leaderboard
+export async function GET(req) {
   if (!hasBlob()) return json({ ok: true, needsBlob: true, leaderboard: [] }, 60);
   try {
+    // ── public racer profile: /api/paddock?racer=handle ──
+    const racer = new URL(req.url).searchParams.get('racer');
+    if (racer) {
+      const u = await getUser(racer);
+      if (!u) return json({ ok: false, error: 'No racer with that Paddock ID' }, 60);
+      const scored = await scorePredictions(u.predictions || {});
+      // rank among all racers
+      const users = await listUsers();
+      const totals = await Promise.all(users.map(async (x) => {
+        const s = await scorePredictions(x.predictions || {});
+        return { handle: x.handle, total: s.total };
+      }));
+      totals.sort((a, b) => b.total - a.total);
+      const rank = totals.findIndex((t) => t.handle.toLowerCase() === racer.toLowerCase()) + 1;
+
+      // public view: settled rounds only — never leak upcoming picks
+      const history = Object.entries(scored.rounds || {})
+        .filter(([, s]) => s.settled)
+        .map(([round, s]) => ({ round: +round, points: s.points, detail: s.detail }));
+      const pendingPicks = Object.entries(scored.rounds || {}).filter(([, s]) => !s.settled).length;
+
+      const p = publicProfile(u);
+      delete p.predictions;
+      return json({
+        ok: true,
+        profile: p,
+        total: scored.total,
+        rank: rank || null,
+        racers: totals.length,
+        history,
+        pendingPicks,
+      }, 120);
+    }
     const users = await listUsers();
     const rows = await Promise.all(users.map(async (u) => {
       const { total } = await scorePredictions(u.predictions || {});

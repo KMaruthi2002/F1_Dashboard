@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useAuth } from './AuthProvider';
 import ProfileModal from './ProfileModal';
 import LandingFX from './LandingFX';
@@ -64,6 +65,7 @@ const FEATURES = [
 ];
 
 export default function Gate({ children }) {
+  const pathname = usePathname();
   const { ready, account, needsBlob, register, login, updateProfile } = useAuth();
   const [guest, setGuest] = useState(false);
   const [guestLoaded, setGuestLoaded] = useState(false);
@@ -124,6 +126,9 @@ export default function Gate({ children }) {
     ? Math.min(5, Math.floor(handle.trim().length / 2) + (handle.trim().length >= 3 ? 2 : 0))
     : Math.min(5, (handle.trim().length >= 3 ? 2 : Math.floor(handle.trim().length)) + Math.min(3, Math.floor(code.trim().length / 3)));
   const armed = tab === 'create' ? handle.trim().length >= 3 : handle.trim().length >= 3 && code.trim().length >= 6;
+
+  // public, shareable routes skip the gate entirely
+  if (pathname?.startsWith('/racer')) return children;
 
   if (!ready || !guestLoaded) {
     return (
