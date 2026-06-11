@@ -27,6 +27,17 @@ A live, auto-updating Formula 1 command center with a sci-fi HUD aesthetic. Buil
 
 All upstream calls are proxied through Next.js API routes with server-side caching, so the browser never hits rate limits and the dashboard degrades gracefully if an API blips.
 
+### OpenF1 live data (Sponsor tier)
+
+OpenF1's free tier serves historical data only — **live data during sessions requires their Sponsor tier**. If you have it, set these environment variables (Vercel/Netlify → Settings → Environment Variables, or `.env.local` for dev):
+
+```
+OPENF1_USERNAME=your-openf1-username
+OPENF1_PASSWORD=your-openf1-password
+```
+
+The server exchanges these for an OAuth2 token automatically (tokens expire hourly — refresh is handled, including mid-request 401 retries). Credentials never reach the browser. Without them the dashboard still works fully, with sessions appearing ~30 min after they end.
+
 ## Run locally
 
 ```bash
