@@ -1,5 +1,6 @@
 'use client';
 
+import { Fragment } from 'react';
 import Panel from './Panel';
 import { teamByConstructorId, compound, COMPOUNDS, flagFor, hiResHeadshot } from '@/lib/teams';
 
@@ -118,18 +119,20 @@ export function TireStrategy({ lastRace }) {
                 <div key={result.driverId} className="stint-row" style={{ '--row-color': team.color }}>
                   <span className="stint-drv">P{result.position} {result.code}</span>
                   <div className="stint-track">
-                    {ss.map((s) => {
+                    {ss.map((s, i) => {
                       const len = Math.max(1, (s.lapEnd || 0) - (s.lapStart || 0) + 1);
                       const c = compound(s.compound);
                       return (
-                        <div
-                          key={s.stint}
-                          className="stint-seg"
-                          title={`${s.compound} · L${s.lapStart}–L${s.lapEnd}`}
-                          style={{ width: `${(len / totalLaps) * 100}%`, '--seg-color': c.color }}
-                        >
-                          {len > totalLaps * 0.12 ? c.code : ''}
-                        </div>
+                        <Fragment key={s.stint}>
+                          {i > 0 && <div className="pit-tick" title={`Pit stop · L${s.lapStart}`} />}
+                          <div
+                            className="stint-seg"
+                            title={`${s.compound} · L${s.lapStart}–L${s.lapEnd} (${len} laps)`}
+                            style={{ width: `${(len / totalLaps) * 100}%`, '--seg-color': c.color }}
+                          >
+                            {len > totalLaps * 0.12 ? c.code : ''}
+                          </div>
+                        </Fragment>
                       );
                     })}
                   </div>

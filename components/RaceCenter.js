@@ -78,7 +78,10 @@ export default function RaceCenter() {
         </span>
       </header>
 
-      <a className="back-link" href="/">‹ BACK TO COMMAND DECK</a>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <a className="back-link" href="/">‹ BACK TO COMMAND DECK</a>
+        <a className="back-link" href="/replay">▸ FULL RACE REPLAY</a>
+      </div>
 
       <div className="rc-layout">
         <div className="rc-col">

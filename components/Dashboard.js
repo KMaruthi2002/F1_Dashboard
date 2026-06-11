@@ -226,9 +226,14 @@ export default function Dashboard() {
                 : 'track map · lap times · sectors · tires · onboard channels'}
             </div>
           </div>
-          <a className={`btn-race-center ${live?.live ? '' : 'idle'}`} href="/live">
-            {live?.live ? '◉ Enter Race Center' : '▸ Open Race Center'}
-          </a>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <a className={`btn-race-center ${live?.live ? '' : 'idle'}`} href="/live" style={{ marginLeft: 0 }}>
+              {live?.live ? '◉ Enter Race Center' : '▸ Open Race Center'}
+            </a>
+            <a className="btn-race-center idle" href="/replay" style={{ marginLeft: 0 }}>
+              ⟲ Race Replay
+            </a>
+          </div>
         </div>
 
         <div id="command">
