@@ -15,6 +15,103 @@ const SLOTS = [
   ['race3', '🥉 P3', 'Third'],
 ];
 
+function timeAgo(iso) {
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return 'now';
+  if (s < 3600) return `${Math.floor(s / 60)}m`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h`;
+  return `${Math.floor(s / 86400)}d`;
+}
+
+// ── Pit Wall: open forum, one thread per round + the lounge ──
+function PitWall({ nextRace }) {
+  const { account, creds } = useAuth();
+  const roundTopic = nextRace ? `round-${nextRace.round}` : null;
+  const [topic, setTopic] = useState(null);
+  const [messages, setMessages] = useState(null);
+  const [text, setText] = useState('');
+  const [posting, setPosting] = useState(false);
+  const [err, setErr] = useState(null);
+
+  const activeTopic = topic || roundTopic || 'lounge';
+
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      fetch(`/api/paddock?forum=${activeTopic}`)
+        .then((r) => r.json())
+        .then((d) => alive && d.ok && setMessages(d.messages || []))
+        .catch(() => {});
+    load();
+    const t = setInterval(load, 20e3);
+    return () => { alive = false; clearInterval(t); };
+  }, [activeTopic]);
+
+  const post = async () => {
+    if (!creds || !text.trim()) return;
+    setPosting(true); setErr(null);
+    const d = await fetch('/api/paddock', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'forum', ...creds, topic: activeTopic, text: text.trim() }),
+    }).then((r) => r.json()).catch(() => null);
+    setPosting(false);
+    if (d?.ok) { setMessages(d.messages); setText(''); }
+    else setErr(d?.error || 'Failed to post');
+  };
+
+  return (
+    <Panel kicker="§ PIT WALL" title="Open Forum" sub="talk racing · be a legend">
+      <div className="tower-toolbar" style={{ marginBottom: 12 }}>
+        {roundTopic && (
+          <button className={`tt-btn ${activeTopic === roundTopic ? 'on' : ''}`} onClick={() => setTopic(roundTopic)}>
+            🏁 RD {String(nextRace.round).padStart(2, '0')}
+          </button>
+        )}
+        <button className={`tt-btn ${activeTopic === 'lounge' ? 'on' : ''}`} onClick={() => setTopic('lounge')}>
+          ☕ LOUNGE
+        </button>
+      </div>
+
+      <div className="forum-feed">
+        {messages === null ? (
+          <div className="rc-msg skel" style={{ height: 60 }} />
+        ) : messages.length === 0 ? (
+          <div className="rc-msg">Radio silence… be the first voice on the pit wall.</div>
+        ) : (
+          [...messages].reverse().map((m, i) => (
+            <div key={`${m.at}-${i}`} className="forum-msg" style={{ '--row-color': m.teamId ? teamByConstructorId(m.teamId).color : 'var(--cyan)' }}>
+              <div className="fm-head">
+                <a href={`/racer/${m.handle}`} className="fm-handle">
+                  {m.country ? `${flagFor(m.country)} ` : ''}@{m.handle}{m.number ? ` #${m.number}` : ''}
+                </a>
+                <span className="fm-time">{timeAgo(m.at)}</span>
+              </div>
+              <div className="fm-text">{m.text}</div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {account ? (
+        <div className="forum-composer">
+          <input
+            type="text" placeholder={`Message the ${activeTopic === 'lounge' ? 'lounge' : 'race thread'}… (280 max)`}
+            value={text} maxLength={280}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !posting && post()}
+          />
+          <button className="btn-ghost" style={{ marginTop: 0, width: 'auto', padding: '0 18px' }} disabled={posting || !text.trim()} onClick={post}>
+            {posting ? '…' : '📻 Send'}
+          </button>
+        </div>
+      ) : (
+        <div className="rc-msg" style={{ marginTop: 10 }}>Sign in to join the conversation.</div>
+      )}
+      {err && <div className="rc-msg" style={{ marginTop: 8, borderLeftColor: 'var(--red)' }}>{err}</div>}
+    </Panel>
+  );
+}
+
 function CarChip({ driver, team, onDragStart, onClick, selected, small, ghost }) {
   return (
     <div
@@ -64,8 +161,11 @@ export default function Paddock() {
   const hasSprint = !!nextRace?.sprint;
 
   const now = Date.now();
-  const raceLocked = nextRace && new Date(nextRace.race).getTime() <= now;
-  const poleLocked = nextRace?.qualifying && new Date(nextRace.qualifying).getTime() <= now;
+  // lock rules: pole locks at quali START · podium locks when quali ENDS (~1h) · sprint at sprint start
+  const qualiStart = nextRace?.qualifying ? new Date(nextRace.qualifying).getTime() : null;
+  const qualiEnd = qualiStart ? qualiStart + 60 * 60e3 : null;
+  const poleLocked = qualiStart && now >= qualiStart;
+  const raceLocked = qualiEnd ? now >= qualiEnd : nextRace && new Date(nextRace.race).getTime() <= now;
   const sprintLocked = nextRace?.sprint && new Date(nextRace.sprint).getTime() <= now;
 
   // load existing picks: account → server prediction; guest → localStorage
@@ -228,13 +328,13 @@ export default function Paddock() {
           >
             {/* podium slots */}
             <div className="pod-slots">
-              {renderSlot('race1', '🏆 P1', 'exact +25 · podium +10', picks.race[0], raceLocked)}
-              {renderSlot('race2', '🥈 P2', 'exact +18 · podium +10', picks.race[1], raceLocked)}
-              {renderSlot('race3', '🥉 P3', 'exact +15 · podium +10', picks.race[2], raceLocked)}
+              {renderSlot('race1', '🏆 P1', 'exact +25 · locks when quali ends', picks.race[0], raceLocked)}
+              {renderSlot('race2', '🥈 P2', 'exact +18 · locks when quali ends', picks.race[1], raceLocked)}
+              {renderSlot('race3', '🥉 P3', 'exact +15 · locks when quali ends', picks.race[2], raceLocked)}
             </div>
             <div className="pod-slots minor">
-              {renderSlot('pole', '◆ POLE', '+10', picks.pole, poleLocked)}
-              {hasSprint && renderSlot('sprint', '⚡ SPRINT WIN', '+15', picks.sprint, sprintLocked)}
+              {renderSlot('pole', '◆ POLE', '+10 · locks at quali start', picks.pole, poleLocked)}
+              {hasSprint && renderSlot('sprint', '⚡ SPRINT WIN', '+15 · locks at sprint start', picks.sprint, sprintLocked)}
             </div>
 
             {/* the garage */}
@@ -305,6 +405,8 @@ export default function Paddock() {
         </div>
 
         <div className="rc-col">
+          <PitWall nextRace={nextRace} />
+
           <Panel kicker="§ GLOBAL" title="Paddock Leaderboard" sub={leaderboard ? `${leaderboard.length} racers` : '…'}>
             {!leaderboard || leaderboard.length === 0 ? (
               <div className="rc-msg">

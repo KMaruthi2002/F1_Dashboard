@@ -2,6 +2,7 @@ import {
   hasBlob, sha, makeGarageCode, validHandle,
   getUser, putUser, listUsers, scorePredictions, getRoundTimes,
   hasEmail, validEmail, maskEmail, makeResetCode, sendResetEmail,
+  validTopic, getForum, postForum,
 } from '@/lib/paddock';
 import { json } from '@/lib/f1';
 
@@ -62,6 +63,14 @@ const cleanDrivers = (arr) =>
 export async function GET(req) {
   if (!hasBlob()) return json({ ok: true, needsBlob: true, leaderboard: [] }, 60);
   try {
+    // ── Pit Wall thread: /api/paddock?forum=topic ──
+    const forumTopic = new URL(req.url).searchParams.get('forum');
+    if (forumTopic) {
+      if (!validTopic(forumTopic)) return json({ ok: false, error: 'bad topic' }, 30);
+      const messages = await getForum(forumTopic);
+      return json({ ok: true, topic: forumTopic, messages }, 10);
+    }
+
     // ── public racer profile: /api/paddock?racer=handle ──
     const racer = new URL(req.url).searchParams.get('racer');
     if (racer) {
@@ -230,6 +239,30 @@ export async function POST(req) {
       return json({ ok: true, profile: publicProfile(user) }, 0);
     }
 
+    if (action === 'forum') {
+      const user = await auth(body);
+      if (!user) return err('Sign in to post on the Pit Wall', 401);
+      const { topic, text } = body;
+      if (!validTopic(topic)) return err('bad topic');
+      const clean = String(text || '').trim().slice(0, 280);
+      if (clean.length < 1) return err('Say something first');
+      if (user.forumLastAt && Date.now() - user.forumLastAt < 15e3) {
+        return err('Easy on the radio · one message per 15 seconds', 429);
+      }
+      user.forumLastAt = Date.now();
+      await putUser(user);
+      const messages = await postForum(topic, {
+        handle: user.handle,
+        name: user.name || '',
+        number: user.number || null,
+        country: user.country || null,
+        teamId: user.teamId || null,
+        text: clean,
+        at: new Date().toISOString(),
+      });
+      return json({ ok: true, topic, messages }, 0);
+    }
+
     if (action === 'predict') {
       const user = await auth(body);
       if (!user) return err('Session invalid', 401);
@@ -238,13 +271,16 @@ export async function POST(req) {
       const times = await getRoundTimes(round);
       if (!times) return err('unknown round');
       const now = Date.now();
+      // podium locks when qualifying ENDS (~1h after it starts)
+      const qualiEnd = times.quali ? times.quali + 60 * 60e3 : null;
 
       user.predictions = user.predictions || {};
       const prev = user.predictions[round] || {};
       const next = { ...prev };
 
       if (race !== undefined) {
-        if (times.race && now >= times.race) return err('Race picks are locked · lights out has happened', 423);
+        if (qualiEnd && now >= qualiEnd) return err('Podium picks are locked · qualifying is done', 423);
+        if (!qualiEnd && times.race && now >= times.race) return err('Race picks are locked · lights out has happened', 423);
         if (!Array.isArray(race) || race.length !== 3 || new Set(race.filter(Boolean)).size !== race.filter(Boolean).length) {
           return err('Pick three different drivers');
         }
