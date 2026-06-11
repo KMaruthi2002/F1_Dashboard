@@ -197,10 +197,10 @@ export default function Dashboard() {
             {live?.live ? 'SESSION LIVE' : 'UPLINK OK'}
           </span>
           <span className="spacer" />
-          <span className="clock" suppressHydrationWarning>
+          <span className="clock hide-sm" suppressHydrationWarning>
             {clock ? clock.toLocaleTimeString(undefined, { hour12: false }) : '--:--:--'}
           </span>
-          {lastSync && <span>SYNC {lastSync.toLocaleTimeString(undefined, { hour12: false })}</span>}
+          {lastSync && <span className="hide-sm">SYNC {lastSync.toLocaleTimeString(undefined, { hour12: false })}</span>}
           <button onClick={() => setShowProfile(true)}>
             {profile?.name ? `⟡ ${profile.name}` : '⟡ Profile'}
           </button>

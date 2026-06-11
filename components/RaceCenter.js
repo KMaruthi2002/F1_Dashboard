@@ -73,7 +73,7 @@ export default function RaceCenter() {
           {isLive ? 'SESSION LIVE' : 'REPLAY · LAST SESSION'}
         </span>
         <span className="spacer" />
-        <span style={{ color: 'var(--accent)' }}>
+        <span className="truncate" style={{ color: 'var(--accent)', maxWidth: '45vw' }}>
           {session ? `${session.name?.toUpperCase()} · ${session.circuit?.toUpperCase()} · ${session.country?.toUpperCase()}` : 'SYNCING…'}
         </span>
       </header>

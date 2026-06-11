@@ -909,3 +909,61 @@ body {
   color: var(--row-color, var(--text));
 }
 .st-row.teams { grid-template-columns: 44px 40px 1fr auto; }
+
+/* ════════════════ Mobile stability pass ════════════════ */
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+@media (max-width: 640px) {
+  .hide-sm { display: none !important; }
+  .statusbar { gap: 10px; font-size: 10px; }
+  .statusbar .brand { font-size: 12px; letter-spacing: 0.14em; }
+
+  /* podium: tighter but still 3-up */
+  .podium { gap: 7px; }
+  .pod-img { width: 52px; height: 52px; }
+  .pod-step.p1 .pod-img { width: 66px; height: 66px; }
+  .pod-step { padding: 12px 6px 10px; }
+  .pod-driver { font-size: 12px; }
+  .pod-rank { font-size: 18px; }
+  .pod-step.p1 .pod-rank { font-size: 24px; }
+  .pod-time { font-size: 9px; }
+
+  /* head-to-head: narrower metric gutter */
+  .h2h-row { grid-template-columns: 1fr 76px 1fr; gap: 6px; }
+  .h2h-val { font-size: 13px; }
+  .h2h-form .form-chip { width: 24px; height: 24px; font-size: 9px; }
+
+  /* tower density */
+  .tower-row { grid-template-columns: 30px 44px 1fr 64px 52px; gap: 6px; padding: 7px 8px; font-size: 12px; }
+  .tw-name { font-size: 11px; }
+  .tire-dot { width: 15px; height: 15px; font-size: 8px; }
+
+  /* stints + tables */
+  .stint-row { grid-template-columns: 44px 1fr; gap: 8px; }
+  .rtable, .tt-table { font-size: 10px; }
+  .rtable th, .rtable td, .tt-table th, .tt-table td { padding: 5px 5px; }
+
+  /* hero + countdown */
+  .hero-main { padding: 22px 18px; }
+  .cd-value { font-size: 26px; }
+  .cd-label { font-size: 8px; letter-spacing: 0.16em; }
+
+  /* gauges 2-up, calendar tiles full-bleed feel */
+  .gauges { grid-template-columns: repeat(2, 1fr); }
+  .cal-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .cal-tile .ct-name { font-size: 13px; }
+
+  /* drawer takes the screen */
+  .drawer { width: 100vw; padding: 20px 18px 36px; }
+  .live-banner { padding: 12px 14px; }
+  .btn-race-center { margin-left: 0; width: 100%; text-align: center; }
+}
+
+/* very small phones */
+@media (max-width: 380px) {
+  .tw-tirelaps { display: none; }
+  .fav-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* iOS momentum scrolling for the wide telemetry table */
+.tt-scroll, .tower, .cal { -webkit-overflow-scrolling: touch; }
