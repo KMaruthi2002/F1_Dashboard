@@ -3,7 +3,7 @@
 import Panel from './Panel';
 import { teamByConstructorId, hiResHeadshot, teamLogoUrl } from '@/lib/teams';
 
-export function DriverStandings({ standings, favDriverId, onSelect, headshots }) {
+export function DriverStandings({ standings, favIds, onSelect, headshots }) {
   const drivers = standings?.drivers || [];
   const max = drivers[0]?.points || 1;
   return (
@@ -17,7 +17,7 @@ export function DriverStandings({ standings, favDriverId, onSelect, headshots })
               return (
                 <div
                   key={d.driverId}
-                  className={`st-row clickable ${d.driverId === favDriverId ? 'fav' : ''}`}
+                  className={`st-row clickable ${favIds?.has?.(d.driverId) ? 'fav' : ''}`}
                   style={{ '--row-color': team.color }}
                   onClick={() => onSelect?.(d)}
                   role="button"

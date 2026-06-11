@@ -68,9 +68,9 @@ export default function AuthProvider({ children }) {
     try { localStorage.removeItem(LS_KEY); } catch {}
   }, []);
 
-  const updateProfile = useCallback(async ({ name, driverId }) => {
+  const updateProfile = useCallback(async (fields) => {
     if (!creds) return { ok: false };
-    const d = await api({ action: 'profile', ...creds, name, driverId });
+    const d = await api({ action: 'profile', ...creds, ...fields });
     if (d.ok) setProfile(d.profile);
     return d;
   }, [creds]);

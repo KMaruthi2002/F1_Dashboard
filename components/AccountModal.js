@@ -39,8 +39,10 @@ export default function AccountModal({ onClose, onEditProfile }) {
           <div className="fav-stats" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
             <div className="fav-stat"><div className="v" style={{ color: 'var(--amber)' }}>{scored?.total ?? 0}</div><div className="l">Paddock Points</div></div>
             <div className="fav-stat"><div className="v">{Object.keys(account.predictions || {}).length}</div><div className="l">Rounds Predicted</div></div>
+            <div className="fav-stat"><div className="v">{account.drivers?.length || 0}</div><div className="l">Drivers Followed</div></div>
+            <div className="fav-stat"><div className="v">{account.teamId ? '✓' : '—'}</div><div className="l">Team Supported</div></div>
           </div>
-          <button className="btn-primary" onClick={() => { onClose(); onEditProfile?.(); }}>Edit name &amp; driver</button>
+          <button className="btn-primary" onClick={() => { onClose(); onEditProfile?.(); }}>⟡ Edit garage — name, team &amp; drivers</button>
           <a className="btn-ghost" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }} href="/paddock">⟶ Go to the Paddock</a>
           <button className="btn-ghost" onClick={() => { logout(); onClose(); }}>Sign out</button>
           <button className="btn-ghost" onClick={onClose}>Close</button>

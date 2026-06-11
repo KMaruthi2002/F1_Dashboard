@@ -112,13 +112,24 @@ export default function Dashboard() {
 
   // effective identity: cloud account wins over local guest profile
   const effProfile = useMemo(() => {
-    if (account) return { name: account.name || account.handle, driverId: account.driverId || profile?.driverId };
-    return profile;
+    if (account) {
+      return {
+        name: account.name || account.handle,
+        teamId: account.teamId || null,
+        drivers: account.drivers || [],
+        driverId: account.drivers?.[0] || null,
+      };
+    }
+    if (!profile) return profile;
+    // migrate old local shape {driverId} → {drivers: []}
+    const drivers = profile.drivers || (profile.driverId ? [profile.driverId] : []);
+    return { ...profile, drivers, driverId: drivers[0] || null };
   }, [account, profile]);
 
   useEffect(() => {
-    if (booted && profile === null) setShowProfile(true);
-  }, [booted, profile]);
+    // first-run customization for guests only — account holders did it at the gate
+    if (booted && profile === null && !account) setShowProfile(true);
+  }, [booted, profile, account]);
 
   const fetchJson = (url) => fetch(url).then((r) => r.json()).catch(() => null);
 
@@ -170,10 +181,23 @@ export default function Dashboard() {
     () => Object.fromEntries((lastRace?.openf1Drivers || []).map((d) => [+d.number, d.headshot])),
     [lastRace]
   );
-  const accent = favStanding ? teamByConstructorId(favStanding.constructorId).color : null;
+  // accent priority: supported TEAM color → first followed driver's team color
+  const accent = useMemo(() => {
+    if (effProfile?.teamId) return teamByConstructorId(effProfile.teamId).color;
+    if (favStanding) return teamByConstructorId(favStanding.constructorId).color;
+    return null;
+  }, [effProfile, favStanding]);
   const accentStyle = accent
     ? { '--accent': accent, '--accent-glow': `color-mix(in srgb, ${accent} 35%, transparent)` }
     : {};
+
+  // all followed drivers → highlight sets
+  const favIds = useMemo(() => new Set(effProfile?.drivers || []), [effProfile]);
+  const favNumbers = useMemo(() => {
+    const nums = new Set();
+    for (const d of standings?.drivers || []) if (favIds.has(d.driverId)) nums.add(+d.number);
+    return nums;
+  }, [standings, favIds]);
 
   // resolve OpenF1 car number → standings driver for the drawer
   const selectByNumber = useCallback((num) => {
@@ -255,11 +279,11 @@ export default function Dashboard() {
         </div>
 
         <div id="live" className="section fade-in">
-          <TimingTower live={live} favNumber={favStanding?.number} onSelectNumber={selectByNumber} />
+          <TimingTower live={live} favNumbers={favNumbers} onSelectNumber={selectByNumber} />
         </div>
 
         <div id="championship" className="grid-2 fade-in">
-          <DriverStandings standings={standings} favDriverId={effProfile?.driverId} onSelect={setDrawerDriver} headshots={headshotByNum} />
+          <DriverStandings standings={standings} favIds={favIds} onSelect={setDrawerDriver} headshots={headshotByNum} />
           <ConstructorStandings standings={standings} />
         </div>
 
@@ -304,8 +328,14 @@ export default function Dashboard() {
         <DriverDrawer
           driver={drawerDriver}
           lastRace={lastRace}
-          isFavourite={effProfile?.driverId === drawerDriver.driverId}
-          onFavourite={(driverId) => { saveProfile({ ...(effProfile || {}), driverId }); setDrawerDriver(null); }}
+          isFavourite={favIds.has(drawerDriver.driverId)}
+          onFavourite={(driverId) => {
+            const drivers = favIds.has(driverId)
+              ? (effProfile?.drivers || []).filter((d) => d !== driverId)
+              : [...new Set([...(effProfile?.drivers || []), driverId])].slice(0, 3);
+            saveProfile({ ...(effProfile || {}), drivers });
+            setDrawerDriver(null);
+          }}
           onClose={() => setDrawerDriver(null)}
         />
       )}
@@ -317,7 +347,8 @@ export default function Dashboard() {
       {showProfile && profile !== undefined && (
         <ProfileModal
           drivers={standings?.drivers || []}
-          initial={profile}
+          constructors={standings?.constructors || []}
+          initial={effProfile}
           onSave={saveProfile}
           onClose={() => setShowProfile(false)}
         />

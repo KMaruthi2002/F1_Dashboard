@@ -10,7 +10,7 @@ function fmtGap(v) {
   return `+${v.toFixed(3)}`;
 }
 
-export default function TimingTower({ live, favNumber, onSelectNumber }) {
+export default function TimingTower({ live, favNumbers, onSelectNumber }) {
   const [view, setView] = useState('tower'); // tower | gaps
   const session = live?.session;
   const grid = live?.grid || [];
@@ -46,7 +46,7 @@ export default function TimingTower({ live, favNumber, onSelectNumber }) {
           {grid.map((d) => {
             const team = teamByOpenF1Name(d.team, d.teamColour);
             const tire = compound(d.compound);
-            const isFav = favNumber != null && +d.number === +favNumber;
+            const isFav = favNumbers?.has?.(+d.number);
             const inDRS = typeof d.interval === 'number' && d.interval > 0 && d.interval < 1.0 && d.position > 1;
             return (
               <div

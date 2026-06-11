@@ -19,10 +19,19 @@ async function auth(body) {
   return user;
 }
 
-const publicProfile = (u) => ({
-  handle: u.handle, name: u.name || '', driverId: u.driverId || null,
-  predictions: u.predictions || {}, createdAt: u.createdAt,
-});
+const publicProfile = (u) => {
+  const drivers = u.drivers || (u.driverId ? [u.driverId] : []);
+  return {
+    handle: u.handle, name: u.name || '',
+    drivers,                              // up to 3 supported drivers
+    teamId: u.teamId || null,             // supported constructor
+    driverId: drivers[0] || null,         // legacy: primary driver
+    predictions: u.predictions || {}, createdAt: u.createdAt,
+  };
+};
+
+const cleanDrivers = (arr) =>
+  Array.isArray(arr) ? [...new Set(arr.filter((d) => typeof d === 'string'))].slice(0, 3) : undefined;
 
 export async function GET() {
   // leaderboard
@@ -55,7 +64,7 @@ export async function POST(req) {
     if (!hasBlob()) return json({ ok: false, needsBlob: true }, 0);
 
     if (action === 'register') {
-      const { handle, name, driverId } = body;
+      const { handle, name, drivers, teamId } = body;
       if (!validHandle(handle)) return err('Handle must be 3–16 letters, numbers or _');
       const existing = await getUser(handle);
       if (existing) return err('That Paddock ID is taken', 409);
@@ -63,7 +72,8 @@ export async function POST(req) {
       const user = {
         handle, codeHash: sha(code),
         name: (name || '').slice(0, 24),
-        driverId: driverId || null,
+        drivers: cleanDrivers(drivers) || [],
+        teamId: teamId || null,
         predictions: {},
         createdAt: new Date().toISOString(),
       };
@@ -89,7 +99,9 @@ export async function POST(req) {
       const user = await auth(body);
       if (!user) return err('Session invalid', 401);
       if (body.name !== undefined) user.name = String(body.name).slice(0, 24);
-      if (body.driverId !== undefined) user.driverId = body.driverId;
+      if (body.driverId !== undefined) user.drivers = cleanDrivers([body.driverId, ...(user.drivers || [])]);
+      if (body.drivers !== undefined) user.drivers = cleanDrivers(body.drivers) || [];
+      if (body.teamId !== undefined) user.teamId = body.teamId;
       await putUser(user);
       return json({ ok: true, profile: publicProfile(user) }, 0);
     }
