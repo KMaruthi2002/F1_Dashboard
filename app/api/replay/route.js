@@ -40,13 +40,49 @@ export async function GET(req) {
     const at = searchParams.get('at');
     const sk = searchParams.get('sk');
 
-    // ── frame request: car positions at a moment in time ──
+    // ── chunk request: GPS *tracks* for all cars over a time window ──
+    // Downsampled to ~2.2Hz per car — the client interpolates between
+    // samples at 60fps so cars glide along the real racing line.
+    const from = searchParams.get('from');
+    if (from && sk) {
+      const t0 = new Date(from).getTime();
+      if (Number.isNaN(t0)) return json({ ok: false }, 60);
+      const durMs = Math.min(180, Math.max(30, +(searchParams.get('dur') || 90))) * 1000;
+      const rows = await openf1(
+        `/location?session_key=${sk}&date>${iso(t0)}&date<${iso(t0 + durMs)}`,
+        86400 // historical — cache hard
+      ).catch(() => []);
+
+      const byDriver = new Map();
+      for (const r of Array.isArray(rows) ? rows : []) {
+        if (r.x === 0 && r.y === 0) continue;
+        if (!byDriver.has(r.driver_number)) byDriver.set(r.driver_number, []);
+        byDriver.get(r.driver_number).push(r);
+      }
+      const tracks = {};
+      for (const [n, samples] of byDriver) {
+        samples.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const out = [];
+        let lastT = -Infinity;
+        for (const s of samples) {
+          const t = new Date(s.date).getTime();
+          if (t - lastT >= 400) { // ~2.2Hz
+            out.push([t - t0, s.x, s.y]);
+            lastT = t;
+          }
+        }
+        if (out.length) tracks[n] = out;
+      }
+      return json({ ok: true, from, durMs, tracks }, 86400);
+    }
+
+    // ── legacy frame request: car positions at a moment in time ──
     if (at && sk) {
       const t = new Date(at).getTime();
       if (Number.isNaN(t)) return json({ ok: false }, 60);
       const rows = await openf1(
         `/location?session_key=${sk}&date>${iso(t)}&date<${iso(t + 8e3)}`,
-        86400 // historical — cache hard
+        86400
       ).catch(() => []);
       const cars = nonZero(latestPerDriver(rows)).map((p) => ({ n: p.driver_number, x: p.x, y: p.y }));
       return json({ ok: true, at, cars }, 86400);
