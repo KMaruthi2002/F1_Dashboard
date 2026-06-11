@@ -61,7 +61,15 @@ export default function ReplayCenter() {
   }, []);
 
   const startAbs = meta ? new Date(meta.dateStart).getTime() : 0;
-  const duration = meta ? Math.max(new Date(meta.dateEnd).getTime() - startAbs, 1) : 1;
+  const scheduled = meta ? Math.max(new Date(meta.dateEnd).getTime() - startAbs, 1) : 1;
+  // races finish before their scheduled slot ends — cap the timeline at the
+  // chequered flag (+ cooldown) so the slider never points at empty GPS
+  const duration = useMemo(() => {
+    const chq = (meta?.raceControl || []).filter((m) => m.flag === 'CHEQUERED').pop();
+    if (!chq) return scheduled;
+    const dataEnd = new Date(chq.date).getTime() - startAbs + 3 * 60e3;
+    return Math.min(scheduled, Math.max(dataEnd, 10 * 60e3));
+  }, [meta, startAbs, scheduled]);
 
   // pit windows (relative ms): badge a car while it's in the box
   const pitWindows = useMemo(() => (meta?.pits || []).map((p) => {
@@ -87,29 +95,45 @@ export default function ReplayCenter() {
     const myGen = replace ? ++gen.current : gen.current;
     fetching.current = true;
     if (replace) { bufferingRef.current = true; setBuffering(true); }
-    const fromIso = new Date(startAbs + offsetMs).toISOString().slice(0, 19);
-    const d = await fetchJson(`/api/replay?sk=${meta.sessionKey}&from=${fromIso}&dur=${CHUNK_S}`);
-    if (gen.current !== myGen) return; // a newer scrub superseded this fetch
-    if (d?.ok) {
-      if (replace) buf.current = { tracks: new Map(), start: offsetMs, end: offsetMs };
-      for (const [n, samples] of Object.entries(d.tracks || {})) {
-        const arr = buf.current.tracks.get(+n) || [];
-        const lastT = arr.length ? arr[arr.length - 1][0] : -Infinity;
-        for (const [dt, x, y] of samples) {
-          const t = offsetMs + dt;
-          if (t > lastT) arr.push([t, x, y]);
+    try {
+      const fromIso = new Date(startAbs + offsetMs).toISOString().slice(0, 19);
+      const d = await fetchJson(`/api/replay?sk=${meta.sessionKey}&from=${fromIso}&dur=${CHUNK_S}`);
+      if (gen.current !== myGen) return; // superseded by a newer scrub — its owner clears the flags
+      let gotSamples = 0;
+      if (d?.ok) {
+        if (replace) buf.current = { tracks: new Map(), start: offsetMs, end: offsetMs };
+        for (const [n, samples] of Object.entries(d.tracks || {})) {
+          gotSamples += samples.length;
+          const arr = buf.current.tracks.get(+n) || [];
+          const lastT = arr.length ? arr[arr.length - 1][0] : -Infinity;
+          for (const [dt, x, y] of samples) {
+            const t = offsetMs + dt;
+            if (t > lastT) arr.push([t, x, y]);
+          }
+          buf.current.tracks.set(+n, arr);
         }
-        buf.current.tracks.set(+n, arr);
+        buf.current.end = offsetMs + (d.durMs || CHUNK_S * 1000);
+        for (const arr of buf.current.tracks.values()) {
+          while (arr.length > 2 && arr[0][0] < cursorMs.current - 20e3) arr.shift();
+        }
       }
-      buf.current.end = offsetMs + (d.durMs || CHUNK_S * 1000);
-      // trim history we've already played (keep 20s behind cursor)
-      for (const arr of buf.current.tracks.values()) {
-        while (arr.length > 2 && arr[0][0] < cursorMs.current - 20e3) arr.shift();
+      // scrubbed into a data void (e.g. after the cooldown) → walk back to the
+      // last moments that actually have cars on track
+      if (replace && gotSamples === 0 && offsetMs > CHUNK_S * 1000) {
+        const back = offsetMs - CHUNK_S * 1000;
+        cursorMs.current = back + 5e3;
+        setCursorDisplay(back + 5e3);
+        fetching.current = false; // hand off to the retry
+        await loadChunk(back, true);
+        return;
+      }
+    } finally {
+      if (gen.current === myGen) {
+        fetching.current = false;
+        bufferingRef.current = false;
+        setBuffering(false);
       }
     }
-    fetching.current = false;
-    bufferingRef.current = false;
-    setBuffering(false);
   }, [meta, startAbs]);
 
   // ── interpolation: where is every car at time c? ──
