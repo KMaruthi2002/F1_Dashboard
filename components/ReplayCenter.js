@@ -34,6 +34,9 @@ export default function ReplayCenter() {
   const rafRef = useRef(null);
   const buf = useRef({ tracks: new Map(), start: 0, end: 0 });
   const fetching = useRef(false);
+  const gen = useRef(0);                // scrub generation: discard stale chunk fetches
+  const bufferingRef = useRef(false);   // freeze the clock while the buffer refills
+  const scrubTimer = useRef(null);
   const seenIncidents = useRef(new Set());
   const lastUiUpdate = useRef(0);
   const lastIncidentCheck = useRef(10 * 60e3);
@@ -61,12 +64,18 @@ export default function ReplayCenter() {
   const duration = meta ? Math.max(new Date(meta.dateEnd).getTime() - startAbs, 1) : 1;
 
   // ── buffer management ────────────────────────────────────────────
+  // replace=true (scrub / race switch): always runs, bumps the generation so
+  // any in-flight older fetch is discarded on arrival. replace=false
+  // (prefetch): skipped while another fetch is in flight.
   const loadChunk = useCallback(async (offsetMs, replace = false) => {
-    if (!meta || fetching.current) return;
+    if (!meta) return;
+    if (!replace && fetching.current) return;
+    const myGen = replace ? ++gen.current : gen.current;
     fetching.current = true;
-    if (replace) setBuffering(true);
+    if (replace) { bufferingRef.current = true; setBuffering(true); }
     const fromIso = new Date(startAbs + offsetMs).toISOString().slice(0, 19);
     const d = await fetchJson(`/api/replay?sk=${meta.sessionKey}&from=${fromIso}&dur=${CHUNK_S}`);
+    if (gen.current !== myGen) return; // a newer scrub superseded this fetch
     if (d?.ok) {
       if (replace) buf.current = { tracks: new Map(), start: offsetMs, end: offsetMs };
       for (const [n, samples] of Object.entries(d.tracks || {})) {
@@ -85,6 +94,7 @@ export default function ReplayCenter() {
       }
     }
     fetching.current = false;
+    bufferingRef.current = false;
     setBuffering(false);
   }, [meta, startAbs]);
 
@@ -113,6 +123,11 @@ export default function ReplayCenter() {
     const step = (now) => {
       const dt = now - last;
       last = now;
+      // freeze the clock while the buffer refills after a scrub
+      if (bufferingRef.current) {
+        rafRef.current = requestAnimationFrame(step);
+        return;
+      }
       let c = cursorMs.current + dt * speedRef.current;
       if (c >= duration) { c = duration; setPlaying(false); }
       cursorMs.current = c;
@@ -156,12 +171,18 @@ export default function ReplayCenter() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meta]);
 
+  // scrub: track position instantly, but only fetch once the slider settles
   const scrub = (v) => {
     const c = +v;
     cursorMs.current = c;
     lastIncidentCheck.current = c;
     setCursorDisplay(c);
-    loadChunk(c, true).then(() => mapRef.current?.setPositions(interpolate(c)));
+    bufferingRef.current = true;
+    setBuffering(true);
+    clearTimeout(scrubTimer.current);
+    scrubTimer.current = setTimeout(() => {
+      loadChunk(c, true).then(() => mapRef.current?.setPositions(interpolate(cursorMs.current)));
+    }, 220);
   };
 
   // race control feed synced to the clock
