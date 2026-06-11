@@ -1,4 +1,4 @@
-import { openf1, jolpica, json, latestPerDriver } from '@/lib/f1';
+import { openf1, jolpica, json, latestPerDriver, extractLap } from '@/lib/f1';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +18,7 @@ async function findOutline(session, drivers) {
   const ref = drivers?.[0]?.driver_number || 1;
   for (const off of [12, 35]) {
     const pts = await trace(session.session_key, ref, start + off * 60e3, start + (off + 2.5) * 60e3);
-    if (pts.length > 50) return pts;
+    if (pts.length > 50) return extractLap(pts);
   }
   return null;
 }
