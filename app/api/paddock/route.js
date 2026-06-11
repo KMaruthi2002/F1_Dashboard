@@ -26,9 +26,32 @@ const publicProfile = (u) => {
     drivers,                              // up to 3 supported drivers
     teamId: u.teamId || null,             // supported constructor
     driverId: drivers[0] || null,         // legacy: primary driver
+    circuitId: u.circuitId || null,       // favourite circuit
+    number: u.number || null,             // personal racing number 1-99
+    country: u.country || null,           // fan's country
+    fanSince: u.fanSince || null,         // year they fell for F1
+    motto: u.motto || '',                 // short tagline
+    goat: u.goat || '',                   // their GOAT
     predictions: u.predictions || {}, createdAt: u.createdAt,
   };
 };
+
+// sanitize the identity fields
+function applyIdentity(user, body) {
+  if (body.name !== undefined) user.name = String(body.name).slice(0, 24);
+  if (body.circuitId !== undefined) user.circuitId = body.circuitId ? String(body.circuitId).slice(0, 40) : null;
+  if (body.number !== undefined) {
+    const n = parseInt(body.number, 10);
+    user.number = Number.isInteger(n) && n >= 1 && n <= 99 ? n : null;
+  }
+  if (body.country !== undefined) user.country = body.country ? String(body.country).slice(0, 32) : null;
+  if (body.fanSince !== undefined) {
+    const y = parseInt(body.fanSince, 10);
+    user.fanSince = Number.isInteger(y) && y >= 1950 && y <= new Date().getFullYear() ? y : null;
+  }
+  if (body.motto !== undefined) user.motto = String(body.motto || '').slice(0, 48);
+  if (body.goat !== undefined) user.goat = String(body.goat || '').slice(0, 32);
+}
 
 const cleanDrivers = (arr) =>
   Array.isArray(arr) ? [...new Set(arr.filter((d) => typeof d === 'string'))].slice(0, 3) : undefined;
@@ -90,7 +113,7 @@ export async function POST(req) {
 
     if (action === 'me') {
       const user = await auth(body);
-      if (!user) return err('Session invalid — sign in again', 401);
+      if (!user) return err('Session invalid · sign in again', 401);
       const scored = await scorePredictions(user.predictions || {});
       return json({ ok: true, profile: publicProfile(user), scored }, 0);
     }
@@ -98,7 +121,7 @@ export async function POST(req) {
     if (action === 'profile') {
       const user = await auth(body);
       if (!user) return err('Session invalid', 401);
-      if (body.name !== undefined) user.name = String(body.name).slice(0, 24);
+      applyIdentity(user, body);
       if (body.driverId !== undefined) user.drivers = cleanDrivers([body.driverId, ...(user.drivers || [])]);
       if (body.drivers !== undefined) user.drivers = cleanDrivers(body.drivers) || [];
       if (body.teamId !== undefined) user.teamId = body.teamId;
@@ -120,14 +143,14 @@ export async function POST(req) {
       const next = { ...prev };
 
       if (race !== undefined) {
-        if (times.race && now >= times.race) return err('Race picks are locked — lights out has happened', 423);
+        if (times.race && now >= times.race) return err('Race picks are locked · lights out has happened', 423);
         if (!Array.isArray(race) || race.length !== 3 || new Set(race.filter(Boolean)).size !== race.filter(Boolean).length) {
           return err('Pick three different drivers');
         }
         next.race = race;
       }
       if (pole !== undefined) {
-        if (times.quali && now >= times.quali) return err('Pole pick is locked — qualifying has started', 423);
+        if (times.quali && now >= times.quali) return err('Pole pick is locked · qualifying has started', 423);
         next.pole = pole;
       }
       if (sprint !== undefined) {

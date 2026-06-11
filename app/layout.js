@@ -9,12 +9,12 @@ const rajdhani = Rajdhani({ subsets: ['latin'], weight: ['400', '500', '600', '7
 const mono = Share_Tech_Mono({ subsets: ['latin'], weight: '400', variable: '--f-mono' });
 
 export const metadata = {
-  title: 'APEX // TELEMETRY — Live F1 Command Center',
+  title: 'APEX // TELEMETRY · Live F1 Command Center',
   description:
-    'A live, auto-updating Formula 1 command center. Race countdown, live timing tower with gaps and tire compounds, championship standings, race results, weather telemetry and strategy — all in a sci-fi HUD.',
+    'A live, auto-updating Formula 1 command center. Race countdown, live timing tower with gaps and tire compounds, championship standings, race results, weather telemetry and strategy · all in a sci-fi HUD.',
   keywords: ['F1 dashboard', 'live F1 timing', 'Formula 1 standings', 'F1 countdown', 'F1 telemetry'],
   openGraph: {
-    title: 'APEX // TELEMETRY — Live F1 Command Center',
+    title: 'APEX // TELEMETRY · Live F1 Command Center',
     description: 'Live timing, standings, strategy and race telemetry in a sci-fi HUD.',
     type: 'website',
   },

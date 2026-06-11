@@ -46,7 +46,7 @@ export async function GET() {
         const prev = await openf1(
           `/sessions?circuit_key=${s.circuit_key ?? ''}&year=${year}&session_name=Race`, 86400
         ).catch(() => []);
-        // circuit_key missing on latest payloads sometimes — match by name
+        // circuit_key missing on latest payloads sometimes · match by name
         const cand = (Array.isArray(prev) ? prev : []).find(
           (p) => p.circuit_short_name === s.circuit_short_name
         ) || prev?.[0];
@@ -78,7 +78,7 @@ export async function GET() {
       if (pts.length) { cars = pts; mode = 'LIVE'; }
     }
     if (!cars.length && sourceSession) {
-      // sessions often finish before their scheduled end — sample at 75% distance
+      // sessions often finish before their scheduled end · sample at 75% distance
       const sStart = new Date(sourceSession.date_start).getTime();
       const sEnd = new Date(sourceSession.date_end).getTime();
       const mid = sStart + (sEnd - sStart) * 0.75;

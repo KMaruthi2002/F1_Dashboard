@@ -61,7 +61,7 @@ export default function TimingTower({ live, favNumbers, onSelectNumber }) {
                 <span className="tw-gap">{d.position === 1 ? <b>LEADER</b> : <b>{fmtGap(d.gapToLeader)}</b>}</span>
                 <span className="tw-int">
                   {inDRS && <span className="drs-chip">DRS</span>}{' '}
-                  {d.position === 1 ? 'INT —' : `INT ${fmtGap(d.interval)}`}
+                  {d.position === 1 ? 'INT ·' : `INT ${fmtGap(d.interval)}`}
                 </span>
                 <span className="tw-tire">
                   {d.compound && (

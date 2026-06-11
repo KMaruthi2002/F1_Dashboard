@@ -142,7 +142,7 @@ export default function Paddock() {
         const g = JSON.parse(localStorage.getItem(GUEST_KEY) || '{}');
         g[round] = { ...payload, savedAt: new Date().toISOString() };
         localStorage.setItem(GUEST_KEY, JSON.stringify(g));
-        setSaveMsg('✓ Saved on this device — create a Paddock ID to join the leaderboard');
+        setSaveMsg('✓ Saved on this device · create a Paddock ID to join the leaderboard');
       } catch { setSaveMsg('✗ Could not save'); }
     }
     setBusy(false);
@@ -153,12 +153,12 @@ export default function Paddock() {
     const p2 = byId.get(picks.race[1])?.code || '—';
     const p3 = byId.get(picks.race[2])?.code || '—';
     const total = account ? (scored?.total ?? 0) : (guestScore?.total ?? 0);
-    const text = `🏁 My ${nextRace?.name || 'F1'} call: P1 ${p1} · P2 ${p2} · P3 ${p3}${picks.pole ? ` · Pole ${byId.get(picks.pole)?.code}` : ''} — ${total} Paddock Points and counting. Make your call:`;
+    const text = `🏁 My ${nextRace?.name || 'F1'} call: P1 ${p1} · P2 ${p2} · P3 ${p3}${picks.pole ? ` · Pole ${byId.get(picks.pole)?.code}` : ''} · ${total} Paddock Points and counting. Make your call:`;
     const url = typeof window !== 'undefined' ? window.location.origin + '/paddock' : '';
     if (navigator.share) navigator.share({ title: 'APEX // PADDOCK', text, url }).catch(() => {});
     else {
       navigator.clipboard?.writeText(`${text} ${url}`);
-      setSaveMsg('✓ Copied to clipboard — paste it anywhere');
+      setSaveMsg('✓ Copied to clipboard · paste it anywhere');
     }
   };
 
@@ -215,7 +215,7 @@ export default function Paddock() {
 
       {needsBlob && (
         <div className="rc-msg" style={{ borderLeftColor: 'var(--amber)', marginTop: 16 }}>
-          ⚠ Guest mode — picks save on this device only. Add a <b>Vercel Blob</b> store (BLOB_READ_WRITE_TOKEN) to unlock global accounts and the leaderboard.
+          ⚠ Guest mode · picks save on this device only. Add a <b>Vercel Blob</b> store (BLOB_READ_WRITE_TOKEN) to unlock global accounts and the leaderboard.
         </div>
       )}
 
@@ -266,7 +266,7 @@ export default function Paddock() {
 
             <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
               <button className="btn-primary" style={{ marginTop: 0, flex: 1, minWidth: 200 }} disabled={busy || raceLocked || !picks.race[0]} onClick={submit}>
-                {busy ? 'Locking in…' : raceLocked ? '🔒 Lights out — locked' : '⟶ Lock in my picks'}
+                {busy ? 'Locking in…' : raceLocked ? '🔒 Lights out · locked' : '⟶ Lock in my picks'}
               </button>
               <button className="btn-ghost" style={{ marginTop: 0, width: 'auto', padding: '10px 20px' }} onClick={share}>
                 ⤴ Share my call
@@ -275,7 +275,7 @@ export default function Paddock() {
             {saveMsg && <div className="rc-msg" style={{ marginTop: 12, borderLeftColor: saveMsg.startsWith('✓') ? 'var(--green)' : 'var(--red)' }}>{saveMsg}</div>}
             {!account && ready && (
               <button className="btn-ghost" onClick={() => setShowAccount(true)}>
-                ⟡ Create a Paddock ID — sync picks + join the global leaderboard
+                ⟡ Create a Paddock ID · sync picks + join the global leaderboard
               </button>
             )}
           </Panel>
@@ -283,7 +283,7 @@ export default function Paddock() {
           {/* my season */}
           <Panel kicker="§ GARAGE" title="My Season" sub={`${myTotal} Paddock Points`}>
             {!myRounds || Object.keys(myRounds).length === 0 ? (
-              <div className="rc-msg">No settled rounds yet — points land when the FIA classification is in.</div>
+              <div className="rc-msg">No settled rounds yet · points land when the FIA classification is in.</div>
             ) : (
               <div className="standings">
                 {Object.entries(myRounds).sort((a, b) => +b[0] - +a[0]).map(([r, s]) => {
@@ -308,7 +308,7 @@ export default function Paddock() {
           <Panel kicker="§ GLOBAL" title="Paddock Leaderboard" sub={leaderboard ? `${leaderboard.length} racers` : '…'}>
             {!leaderboard || leaderboard.length === 0 ? (
               <div className="rc-msg">
-                {needsBlob ? 'Leaderboard goes live once Blob storage is connected.' : 'Empty grid — be the first to lock in picks.'}
+                {needsBlob ? 'Leaderboard goes live once Blob storage is connected.' : 'Empty grid · be the first to lock in picks.'}
               </div>
             ) : (
               <div className="standings">
@@ -331,10 +331,10 @@ export default function Paddock() {
 
           <Panel kicker="§ RULES" title="How Points Work">
             <div className="rc-feed" style={{ marginTop: 0 }}>
-              <div className="rc-msg">🏆 Exact podium call — <b>P1 +25 · P2 +18 · P3 +15</b></div>
-              <div className="rc-msg">🎯 Right driver, wrong step — <b>+10</b></div>
-              <div className="rc-msg">◆ Pole sitter — <b>+10</b> (locks at quali)</div>
-              <div className="rc-msg">⚡ Sprint winner — <b>+15</b> (sprint weekends)</div>
+              <div className="rc-msg">🏆 Exact podium call · <b>P1 +25 · P2 +18 · P3 +15</b></div>
+              <div className="rc-msg">🎯 Right driver, wrong step · <b>+10</b></div>
+              <div className="rc-msg">◆ Pole sitter · <b>+10</b> (locks at quali)</div>
+              <div className="rc-msg">⚡ Sprint winner · <b>+15</b> (sprint weekends)</div>
               <div className="rc-msg">🔒 Race picks lock at lights out. Scored automatically against the FIA classification.</div>
             </div>
           </Panel>

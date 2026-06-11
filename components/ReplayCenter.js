@@ -21,7 +21,7 @@ function fmtClock(ms) {
 
 export default function ReplayCenter() {
   const [meta, setMeta] = useState(null);
-  const [track, setTrack] = useState(null);
+  const [roundSel, setRoundSel] = useState('');
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(8);
   const [cursorDisplay, setCursorDisplay] = useState(0);
@@ -39,9 +39,22 @@ export default function ReplayCenter() {
   const lastIncidentCheck = useRef(10 * 60e3);
   speedRef.current = speed;
 
+  // load (or switch to) a race: resets the whole playback state
+  const loadMeta = useCallback(async (round) => {
+    setMeta(null); setPlaying(false); setIncident(null); setBuffering(true);
+    seenIncidents.current = new Set();
+    buf.current = { tracks: new Map(), start: 0, end: 0 };
+    cursorMs.current = 10 * 60e3;
+    lastIncidentCheck.current = 10 * 60e3;
+    setCursorDisplay(10 * 60e3);
+    const d = await fetchJson(`/api/replay${round ? `?round=${round}` : ''}`);
+    if (d?.ok) { setMeta(d); setRoundSel(String(d.selectedRound ?? '')); }
+    setBuffering(false);
+  }, []);
+
   useEffect(() => {
-    fetchJson('/api/replay').then((d) => d?.ok && setMeta(d));
-    fetchJson('/api/track').then((d) => d?.ok && setTrack(d));
+    loadMeta();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startAbs = meta ? new Date(meta.dateStart).getTime() : 0;
@@ -189,11 +202,38 @@ export default function ReplayCenter() {
 
       <div className="rc-layout">
         <div className="rc-col">
-          <Panel kicker="§ REPLAY" title="Full Race Replay" sub={meta ? `${meta.year} · ${meta.circuit} · real GPS` : '…'}>
+          <Panel kicker="§ REPLAY" title="Full Race Replay" sub={meta ? `${meta.year} · ${meta.circuit} · real GPS` : 'loading…'}>
+            {/* Grand Prix selector: replay ANY completed round of the season */}
+            <div className="gp-select-row">
+              <select
+                className="h2h-select"
+                style={{ '--side-color': 'var(--accent)', maxWidth: 360 }}
+                value={roundSel}
+                onChange={(e) => loadMeta(e.target.value)}
+                disabled={buffering}
+                aria-label="Choose a Grand Prix"
+              >
+                {(meta?.rounds || []).length === 0 && <option value="">Loading season…</option>}
+                {(meta?.rounds || []).map((r) => (
+                  <option key={r.round} value={r.round}>
+                    RD {String(r.round).padStart(2, '0')} · {r.name} · {r.country}
+                  </option>
+                ))}
+              </select>
+              {meta && (
+                <a
+                  className="back-link" style={{ marginTop: 0 }}
+                  href={`https://www.youtube.com/@Formula1/search?query=${encodeURIComponent(`${meta.year} ${meta.location || meta.circuit} Grand Prix highlights`)}`}
+                  target="_blank" rel="noopener noreferrer"
+                >
+                  ▶ OFFICIAL HIGHLIGHTS
+                </a>
+              )}
+            </div>
             <ReplayMap
               ref={mapRef}
-              bounds={track?.bounds}
-              outline={track?.outline}
+              bounds={meta?.bounds}
+              outline={meta?.outline}
               drivers={meta?.drivers}
               sourceYear={meta?.year}
             />
@@ -246,7 +286,7 @@ export default function ReplayCenter() {
 
           <Panel kicker="§ HOW" title="Time Machine">
             <div className="rc-msg">
-              Press <b style={{ color: 'var(--accent)' }}>▶</b> — every car follows its real GPS racing line, interpolated at 60fps. Scrub anywhere on the timeline. Incidents pause the replay and link to the footage on F1&apos;s official channel.
+              Press <b style={{ color: 'var(--accent)' }}>▶</b> · every car follows its real GPS racing line, interpolated at 60fps. Scrub anywhere on the timeline. Incidents pause the replay and link to the footage on F1&apos;s official channel.
             </div>
           </Panel>
         </div>

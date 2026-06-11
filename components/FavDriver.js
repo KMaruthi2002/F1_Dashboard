@@ -76,7 +76,7 @@ export default function FavDriver({ profile, standings, lastRace, onEdit }) {
     return (
       <Panel kicker="§ 09 · GARAGE" title="Your Garage">
         <div className="rc-msg">
-          Empty garage — no team, no drivers.{' '}
+          Empty garage · no team, no drivers.{' '}
           <button className="btn-ghost" style={{ width: 'auto', display: 'inline-block', marginTop: 0, marginLeft: 8 }} onClick={onEdit}>
             build it →
           </button>
@@ -107,7 +107,7 @@ export default function FavDriver({ profile, standings, lastRace, onEdit }) {
         {cards.map((s) => <DriverCard key={s.driverId} standing={s} lastRace={lastRace} />)}
       </div>
 
-      <button className="btn-ghost" onClick={onEdit}>⟡ Edit garage — team &amp; drivers</button>
+      <button className="btn-ghost" onClick={onEdit}>⟡ Edit garage · team &amp; drivers</button>
     </Panel>
   );
 }

@@ -39,7 +39,7 @@ export default function TrackMap({ track, grid, selected, onSelect }) {
   }, [track, grid]);
 
   if (!path) {
-    return <div className="rc-msg">Track trace not available yet — the map draws itself from real car GPS once a session has run.</div>;
+    return <div className="rc-msg">Track trace not available yet · the map draws itself from real car GPS once a session has run.</div>;
   }
 
   return (

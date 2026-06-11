@@ -18,7 +18,7 @@ export async function GET() {
 
     const reval = live ? 15 : 120;
     const safe = (p, r) => openf1(p, r).catch(() => []);
-    // two staggered batches — OpenF1's free tier rate-limits bursts
+    // two staggered batches · OpenF1's free tier rate-limits bursts
     const [drivers, positions, intervals] = await Promise.all([
       safe(`/drivers?session_key=${s.session_key}`, 600),
       safe(`/position?session_key=${s.session_key}`, reval),
@@ -96,7 +96,7 @@ export async function GET() {
       fetchedAt: new Date().toISOString(),
     }, live ? 15 : 90);
   } catch (e) {
-    // never break the dashboard — serve graceful fallback
+    // never break the dashboard · serve graceful fallback
     return json({ ...FALLBACK, degraded: e.message }, 30);
   }
 }

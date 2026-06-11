@@ -35,14 +35,14 @@ export default function AccountModal({ onClose, onEditProfile }) {
         <div className="modal" onClick={(e) => e.stopPropagation()}>
           <span className="step-tag">⟡ PADDOCK ID</span>
           <h2>@{account.handle}</h2>
-          <p>{account.name ? `${account.name} · ` : ''}signed in everywhere — picks, points and your driver follow this ID.</p>
+          <p>{account.name ? `${account.name} · ` : ''}signed in everywhere · picks, points and your driver follow this ID.</p>
           <div className="fav-stats" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
             <div className="fav-stat"><div className="v" style={{ color: 'var(--amber)' }}>{scored?.total ?? 0}</div><div className="l">Paddock Points</div></div>
             <div className="fav-stat"><div className="v">{Object.keys(account.predictions || {}).length}</div><div className="l">Rounds Predicted</div></div>
             <div className="fav-stat"><div className="v">{account.drivers?.length || 0}</div><div className="l">Drivers Followed</div></div>
             <div className="fav-stat"><div className="v">{account.teamId ? '✓' : '—'}</div><div className="l">Team Supported</div></div>
           </div>
-          <button className="btn-primary" onClick={() => { onClose(); onEditProfile?.(); }}>⟡ Edit garage — name, team &amp; drivers</button>
+          <button className="btn-primary" onClick={() => { onClose(); onEditProfile?.(); }}>⟡ Edit garage · name, team &amp; drivers</button>
           <a className="btn-ghost" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }} href="/paddock">⟶ Go to the Paddock</a>
           <button className="btn-ghost" onClick={() => { logout(); onClose(); }}>Sign out</button>
           <button className="btn-ghost" onClick={onClose}>Close</button>
@@ -58,14 +58,14 @@ export default function AccountModal({ onClose, onEditProfile }) {
         <div className="modal">
           <span className="step-tag" style={{ color: 'var(--green)' }}>✓ GARAGE BUILT</span>
           <h2>Save your garage code</h2>
-          <p>This is your password — it&apos;s shown <b style={{ color: 'var(--red)' }}>once</b>. Screenshot it or write it down.</p>
+          <p>This is your password · it&apos;s shown <b style={{ color: 'var(--red)' }}>once</b>. Screenshot it or write it down.</p>
           <div className="garage-code">{newCode}</div>
           <button
             className="btn-ghost"
             onClick={() => { navigator.clipboard?.writeText(newCode); setMsg('Copied!'); }}
           >⧉ Copy code</button>
           {msg && <p style={{ color: 'var(--green)', marginTop: 8 }}>{msg}</p>}
-          <button className="btn-primary" onClick={onClose}>I saved it — let&apos;s race ›</button>
+          <button className="btn-primary" onClick={onClose}>I saved it · let&apos;s race ›</button>
         </div>
       </div>
     );
@@ -83,14 +83,14 @@ export default function AccountModal({ onClose, onEditProfile }) {
 
         {needsBlob && (
           <div className="rc-msg" style={{ borderLeftColor: 'var(--amber)', marginBottom: 14 }}>
-            Cloud accounts need Vercel Blob — add a Blob store to the project and set BLOB_READ_WRITE_TOKEN. Until then the app runs in guest mode.
+            Cloud accounts need Vercel Blob · add a Blob store to the project and set BLOB_READ_WRITE_TOKEN. Until then the app runs in guest mode.
           </div>
         )}
 
         {tab === 'register' ? (
           <>
             <h2>Create your Paddock ID</h2>
-            <p>One ID for everything — predictions, Paddock Points, your driver. You&apos;ll get a garage code as your password.</p>
+            <p>One ID for everything · predictions, Paddock Points, your driver. You&apos;ll get a garage code as your password.</p>
             <input type="text" placeholder="PADDOCK ID (3–16 chars)" value={handle} maxLength={16}
               onChange={(e) => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))} />
             <div style={{ height: 10 }} />

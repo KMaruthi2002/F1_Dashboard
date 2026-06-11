@@ -46,7 +46,7 @@ function Boot({ done }) {
         ))}
       </div>
       <div className="boot-log">
-        {green ? <span className="ok">▮ {BOOT_LINES[BOOT_LINES.length - 1]} — LIGHTS OUT</span> : `▮ ${BOOT_LINES[line]}`}
+        {green ? <span className="ok">▮ {BOOT_LINES[BOOT_LINES.length - 1]} · LIGHTS OUT</span> : `▮ ${BOOT_LINES[line]}`}
       </div>
     </div>
   );
@@ -127,7 +127,7 @@ export default function Dashboard() {
   }, [account, profile]);
 
   useEffect(() => {
-    // first-run customization for guests only — account holders did it at the gate
+    // first-run customization for guests only · account holders did it at the gate
     if (booted && profile === null && !account) setShowProfile(true);
   }, [booted, profile, account]);
 
@@ -216,7 +216,7 @@ export default function Dashboard() {
     const fl = (lastRace?.results || []).find((r) => r.fastestLap?.rank === 1);
     if (fl) items.push(<span key="f">FASTEST LAP <b className="hl">{fl.code} · {fl.fastestLap.time}</b></span>);
     if (nextRace) items.push(<span key="n">NEXT <b className="rd">RD {nextRace.round} · {nextRace.name?.toUpperCase()}</b></span>);
-    if (live?.live) items.push(<span key="live"><b className="rd">◉ SESSION LIVE — {live.session?.name?.toUpperCase()} · {live.session?.circuit?.toUpperCase()}</b></span>);
+    if (live?.live) items.push(<span key="live"><b className="rd">◉ SESSION LIVE · {live.session?.name?.toUpperCase()} · {live.session?.circuit?.toUpperCase()}</b></span>);
     items.push(<span key="x">APEX // TELEMETRY · LIGHTS OUT AND AWAY WE GO</span>);
     return items;
   }, [standings, lastRace, nextRace, live]);
@@ -252,7 +252,7 @@ export default function Dashboard() {
         </div>
         <div className="kerb" style={{ margin: '0 calc(-1 * clamp(14px, 3vw, 40px))' }} />
 
-        {/* mission tiles — the hub */}
+        {/* mission tiles · the hub */}
         <div className="mission-tiles">
           <a className="mission-tile" href="/live" style={{ '--tile-color': live?.live ? 'var(--green)' : 'var(--cyan)' }}>
             {live?.live && <span className="mt-live">◉ LIVE</span>}

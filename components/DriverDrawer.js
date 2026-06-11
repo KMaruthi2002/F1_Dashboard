@@ -75,7 +75,7 @@ export default function DriverDrawer({ driver, lastRace, onClose, onFavourite, i
 
         {raceResult && (
           <div className="drawer-sect">
-            <h4>// Last Race — {lastRace?.name}</h4>
+            <h4>// Last Race · {lastRace?.name}</h4>
             <div className="rc-msg" style={{ borderLeftColor: team.color }}>
               Finished <b style={{ color: 'var(--text)' }}>{raceResult.positionText}</b> from grid P{raceResult.grid || '—'}
               {raceResult.fastestLap?.rank === 1 ? ' · ◆ fastest lap' : ''} · {raceResult.time || raceResult.status}

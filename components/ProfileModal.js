@@ -39,7 +39,7 @@ export default function ProfileModal({ drivers, constructors, initial, onSave, o
           <>
             <span className="step-tag">02 / 03 · THE CONSTRUCTOR</span>
             <h2>Support a team</h2>
-            <p>Their color becomes your dashboard accent. Optional — skip if your heart belongs to drivers only.</p>
+            <p>Their color becomes your dashboard accent. Optional · skip if your heart belongs to drivers only.</p>
             <div className="drv-grid">
               {(constructors || []).map((c) => {
                 const team = teamByConstructorId(c.constructorId);
@@ -57,7 +57,7 @@ export default function ProfileModal({ drivers, constructors, initial, onSave, o
               })}
             </div>
             <button className="btn-primary" onClick={() => setStep(2)}>
-              {teamId ? 'Continue ›' : 'Skip — drivers only ›'}
+              {teamId ? 'Continue ›' : 'Skip · drivers only ›'}
             </button>
             <button className="btn-ghost" onClick={() => setStep(0)}>‹ Back</button>
           </>

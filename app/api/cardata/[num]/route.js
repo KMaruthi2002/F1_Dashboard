@@ -20,7 +20,7 @@ export async function GET(_req, { params }) {
     let winStart, winEnd;
     if (live) { winStart = now - 15e3; winEnd = now + 5e3; }
     else {
-      // sessions often end early — sample 75% of the way through
+      // sessions often end early · sample 75% of the way through
       const mid = start + (end - start) * 0.75;
       winStart = mid; winEnd = mid + 15e3;
     }
