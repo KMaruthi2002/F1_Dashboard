@@ -8,7 +8,7 @@ const W = 1000;
 
 // Imperative track map: positions are written straight to the DOM at 60fps
 // (no React re-render per frame), labels travel with their cars.
-const ReplayMap = forwardRef(function ReplayMap({ bounds, outline, drivers, sourceYear }, ref) {
+const ReplayMap = forwardRef(function ReplayMap({ bounds, outline, drivers, sourceYear, badge, badgeLive }, ref) {
   const gRefs = useRef(new Map());
 
   const geo = useMemo(() => {
@@ -41,7 +41,9 @@ const ReplayMap = forwardRef(function ReplayMap({ bounds, outline, drivers, sour
 
   return (
     <div className="trackmap-wrap">
-      <span className="map-mode replay">▸ REPLAY{sourceYear ? ` · ${sourceYear}` : ''} · FULL RACE</span>
+      <span className={`map-mode ${badgeLive ? 'live' : 'replay'}`}>
+        {badge || `▸ REPLAY${sourceYear ? ` · ${sourceYear}` : ''} · FULL RACE`}
+      </span>
       <svg className="trackmap" viewBox={`0 0 ${W} ${geo.H}`} xmlns="http://www.w3.org/2000/svg">
         <path className="outline-glow" d={geo.path} />
         <path className="outline" d={geo.path} />

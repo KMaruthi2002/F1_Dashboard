@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Panel from './Panel';
 import TrackMap from './TrackMap';
+import LiveTrackMap from './LiveTrackMap';
 import { teamByOpenF1Name, compound } from '@/lib/teams';
 
 const fetchJson = (url) => fetch(url).then((r) => r.json()).catch(() => null);
@@ -86,7 +87,17 @@ export default function RaceCenter() {
       <div className="rc-layout">
         <div className="rc-col">
           <Panel kicker="§ MAP" title="Track Positions" sub={track?.circuit || '…'}>
-            <TrackMap track={track} grid={grid} selected={selected} onSelect={setSelected} />
+            {isLive && track?.mode === 'LIVE' && track?.bounds ? (
+              // live session with working GPS → smooth broadcast-style feed
+              <LiveTrackMap
+                bounds={track.bounds}
+                outline={track.outline}
+                sessionKey={live.session.key}
+                drivers={grid.map((g) => ({ n: g.number, acr: g.acronym, team: g.team, colour: g.teamColour }))}
+              />
+            ) : (
+              <TrackMap track={track} grid={grid} selected={selected} onSelect={setSelected} />
+            )}
           </Panel>
 
           <Panel
