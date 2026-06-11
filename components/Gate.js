@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from './AuthProvider';
-import ProfileModal from './ProfileModal';
+import GarageSetup from './GarageSetup';
 import LandingFX from './LandingFX';
 import { teamByConstructorId, flagFor } from '@/lib/teams';
 
@@ -139,15 +139,17 @@ export default function Gate({ children }) {
     );
   }
 
+  // fresh account → full-screen garage build; sign-in skips straight to the app
   if (account && customizing) {
     return (
-      <ProfileModal
+      <GarageSetup
+        handle={account.handle}
         drivers={standings?.drivers || []}
         constructors={standings?.constructors || []}
         circuits={schedule?.races || []}
         initial={account}
-        onSave={async (p) => { await updateProfile(p); setCustomizing(false); }}
-        onClose={() => setCustomizing(false)}
+        busy={busy}
+        onDone={async (p) => { setBusy(true); await updateProfile(p); setBusy(false); setCustomizing(false); }}
       />
     );
   }

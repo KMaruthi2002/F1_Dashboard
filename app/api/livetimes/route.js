@@ -35,7 +35,12 @@ export async function GET() {
       byDriver.set(lap.driver_number, cur);
     }
     const pitCount = new Map();
-    for (const p of pits || []) pitCount.set(p.driver_number, (pitCount.get(p.driver_number) || 0) + 1);
+    const lastPit = new Map();
+    for (const p of pits || []) {
+      pitCount.set(p.driver_number, (pitCount.get(p.driver_number) || 0) + 1);
+      const t = new Date(p.date).getTime();
+      if (!lastPit.has(p.driver_number) || t > lastPit.get(p.driver_number)) lastPit.set(p.driver_number, t);
+    }
 
     // overall fastest (purple) lap
     let purple = null;
@@ -59,6 +64,7 @@ export async function GET() {
         bestLapRaw: v.best?.lap_duration ?? null,
         isPurple: purple && v.best && v.best.lap_duration === purple.lap_duration,
         pits: pitCount.get(num) || 0,
+        lastPit: lastPit.get(num) || null,
       };
     });
 

@@ -187,10 +187,16 @@ export default function RaceCenter() {
                           <td>{d.position}</td>
                           <td className="acr">{d.acronym}</td>
                           <td>
-                            {d.compound ? (
-                              <span className="tire-dot" style={{ '--tire-color': tire.color }}>{tire.code}</span>
-                            ) : '—'}
-                            {d.tyreLaps != null && <span style={{ color: 'var(--text-dim)', fontSize: 10 }}> L{d.tyreLaps}</span>}
+                            {isLive && t.lastPit && Date.now() - t.lastPit < 45e3 ? (
+                              <span className="drs-chip" style={{ background: 'var(--amber)' }}>PIT</span>
+                            ) : (
+                              <>
+                                {d.compound ? (
+                                  <span className="tire-dot" style={{ '--tire-color': tire.color }}>{tire.code}</span>
+                                ) : '—'}
+                                {d.tyreLaps != null && <span style={{ color: 'var(--text-dim)', fontSize: 10 }}> L{d.tyreLaps}</span>}
+                              </>
+                            )}
                           </td>
                           <td>{d.position === 1 ? '—' : fmtGap(d.gapToLeader)}</td>
                           <td>{d.position === 1 ? '—' : fmtGap(d.interval)}</td>

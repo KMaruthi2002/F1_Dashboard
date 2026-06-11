@@ -23,13 +23,18 @@ const ReplayMap = forwardRef(function ReplayMap({ bounds, outline, drivers, sour
   }, [bounds, outline]);
 
   useImperativeHandle(ref, () => ({
-    setPositions(posMap) {
+    setPositions(posMap, pitSet) {
       if (!geo) return;
-      for (const [n, p] of posMap) {
-        const el = gRefs.current.get(+n);
-        if (el) {
+      for (const [n, el] of gRefs.current) {
+        const p = posMap.get(+n) ?? posMap.get(String(n));
+        if (p) {
           el.setAttribute('transform', `translate(${geo.mx(p.x).toFixed(1)} ${geo.my(p.y).toFixed(1)})`);
           el.style.opacity = '1';
+        }
+        // amber PIT indicator while the car is in the box
+        const inPit = pitSet?.has?.(+n);
+        for (const ind of el.querySelectorAll('.pit-ind')) {
+          ind.style.opacity = inPit ? '1' : '0';
         }
       }
     },
@@ -55,8 +60,17 @@ const ReplayMap = forwardRef(function ReplayMap({ bounds, outline, drivers, sour
               ref={(el) => { if (el) gRefs.current.set(+d.n, el); }}
               style={{ opacity: 0 }}
             >
+              <circle
+                className="pit-ind" r={20} fill="none"
+                stroke="#FFB300" strokeWidth="3" strokeDasharray="6 5"
+                style={{ opacity: 0, transition: 'opacity 0.3s' }}
+              />
               <circle r={13} fill={team.color} stroke="#04050a" strokeWidth="3" />
               <text className="car-label" x={18} y={9}>{d.acr}</text>
+              <text
+                className="pit-ind" x={18} y={-16}
+                style={{ opacity: 0, transition: 'opacity 0.3s', fill: '#FFB300', fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700 }}
+              >PIT</text>
             </g>
           );
         })}

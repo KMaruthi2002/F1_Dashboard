@@ -1354,3 +1354,31 @@ body {
 }
 .cal-tile.mine { border-top-color: var(--accent); box-shadow: 0 0 22px var(--accent-glow); }
 .cal-tile .ct-tag.t-mine { color: var(--accent); border: 1px solid var(--line-strong); }
+
+/* ── Garage setup page ── */
+.gs-grid {
+  position: relative; z-index: 2;
+  display: grid; grid-template-columns: 1fr 1.15fr; gap: clamp(20px, 3vw, 44px);
+  max-width: 1240px; width: 100%; align-items: start;
+}
+@media (max-width: 980px) { .gs-grid { grid-template-columns: 1fr; } }
+.gs-preview { position: sticky; top: 30px; }
+@media (max-width: 980px) { .gs-preview { position: static; } }
+.gs-card {
+  border: 2px solid var(--line-strong); padding: 20px;
+  background: rgba(0,0,0,0.35); transition: border-color 0.4s;
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+}
+.gs-card-top { display: flex; align-items: center; gap: 14px; }
+.gs-card-name { font-family: var(--font-display); font-weight: 900; font-size: 20px; letter-spacing: 0.06em; text-transform: uppercase; }
+.gs-card-handle { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); letter-spacing: 0.14em; }
+.gs-card-flag { margin-left: auto; font-size: 26px; }
+.gs-card-motto { margin-top: 12px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+.gs-card-rows { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+.gs-card-row {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; color: var(--text);
+  padding: 8px 10px; background: rgba(255,255,255,0.025); border: 1px solid var(--line);
+}
+.gs-card-row.gs-chips { gap: 14px; flex-wrap: wrap; min-height: 44px; }
+.gs-steps { display: flex; gap: 6px; margin-top: 18px; flex-wrap: wrap; }

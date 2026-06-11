@@ -122,7 +122,10 @@ export async function GET(req) {
       outline = outlinePts.filter((_, i) => i % step === 0).map((p) => [p.x, p.y]);
     }
 
-    const raceControl = await openf1(`/race_control?session_key=${session.session_key}`, 3600).catch(() => []);
+    const [raceControl, pitsRaw] = await Promise.all([
+      openf1(`/race_control?session_key=${session.session_key}`, 3600).catch(() => []),
+      openf1(`/pit?session_key=${session.session_key}`, 3600).catch(() => []),
+    ]);
 
     return json({
       ok: true,
@@ -145,6 +148,9 @@ export async function GET(req) {
       raceControl: (raceControl || []).map((m) => ({
         date: m.date, lap: m.lap_number ?? null, category: m.category,
         flag: m.flag, message: m.message, scope: m.scope, driverNumber: m.driver_number ?? null,
+      })),
+      pits: (Array.isArray(pitsRaw) ? pitsRaw : []).map((p) => ({
+        n: p.driver_number, date: p.date, lap: p.lap_number ?? null, duration: p.pit_duration ?? null,
       })),
     }, 1800);
   } catch (e) {

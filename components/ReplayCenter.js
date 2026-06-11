@@ -63,6 +63,20 @@ export default function ReplayCenter() {
   const startAbs = meta ? new Date(meta.dateStart).getTime() : 0;
   const duration = meta ? Math.max(new Date(meta.dateEnd).getTime() - startAbs, 1) : 1;
 
+  // pit windows (relative ms): badge a car while it's in the box
+  const pitWindows = useMemo(() => (meta?.pits || []).map((p) => {
+    const t = new Date(p.date).getTime() - startAbs;
+    const dur = p.duration ? p.duration * 1000 : 25e3;
+    return { n: +p.n, start: t - 4e3, end: t + dur + 6e3 };
+  }), [meta, startAbs]);
+  const pitWindowsRef = useRef([]);
+  pitWindowsRef.current = pitWindows;
+  const pitSetAt = useCallback((c) => {
+    const s = new Set();
+    for (const w of pitWindowsRef.current) if (c >= w.start && c <= w.end) s.add(w.n);
+    return s;
+  }, []);
+
   // ── buffer management ────────────────────────────────────────────
   // replace=true (scrub / race switch): always runs, bumps the generation so
   // any in-flight older fetch is discarded on arrival. replace=false
@@ -132,7 +146,7 @@ export default function ReplayCenter() {
       if (c >= duration) { c = duration; setPlaying(false); }
       cursorMs.current = c;
 
-      mapRef.current?.setPositions(interpolate(c));
+      mapRef.current?.setPositions(interpolate(c), pitSetAt(c));
 
       // refill buffer ahead of the cursor
       if (buf.current.end - c < PREFETCH_AT && buf.current.end < duration && !fetching.current) {
@@ -165,7 +179,7 @@ export default function ReplayCenter() {
   useEffect(() => {
     if (!meta) return;
     loadChunk(cursorMs.current, true).then(() => {
-      mapRef.current?.setPositions(interpolate(cursorMs.current));
+      mapRef.current?.setPositions(interpolate(cursorMs.current), pitSetAt(cursorMs.current));
       setCursorDisplay(cursorMs.current);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -181,7 +195,7 @@ export default function ReplayCenter() {
     setBuffering(true);
     clearTimeout(scrubTimer.current);
     scrubTimer.current = setTimeout(() => {
-      loadChunk(c, true).then(() => mapRef.current?.setPositions(interpolate(cursorMs.current)));
+      loadChunk(c, true).then(() => mapRef.current?.setPositions(interpolate(cursorMs.current), pitSetAt(cursorMs.current)));
     }, 220);
   };
 
