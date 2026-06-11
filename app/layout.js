@@ -1,4 +1,5 @@
 import './globals.css';
+import { Analytics } from '@vercel/analytics/react';
 import { Orbitron, Rajdhani, Share_Tech_Mono } from 'next/font/google';
 
 const orbitron = Orbitron({ subsets: ['latin'], weight: ['500', '700', '900'], variable: '--f-orbitron' });
@@ -31,6 +32,7 @@ export default function RootLayout({ children }) {
         {children}
         <div className="vignette" />
         <div className="scanlines" />
+        <Analytics />
       </body>
     </html>
   );
