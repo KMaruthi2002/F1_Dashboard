@@ -2,6 +2,7 @@ import './globals.css';
 import { Analytics } from '@vercel/analytics/react';
 import AuthProvider from '@/components/AuthProvider';
 import { Orbitron, Rajdhani, Share_Tech_Mono } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
 
 const orbitron = Orbitron({ subsets: ['latin'], weight: ['500', '700', '900'], variable: '--f-orbitron' });
 const rajdhani = Rajdhani({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--f-rajdhani' });
