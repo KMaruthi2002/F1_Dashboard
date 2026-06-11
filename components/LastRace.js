@@ -1,21 +1,27 @@
 'use client';
 
 import Panel from './Panel';
-import { teamByConstructorId, compound, COMPOUNDS, flagFor } from '@/lib/teams';
+import { teamByConstructorId, compound, COMPOUNDS, flagFor, hiResHeadshot } from '@/lib/teams';
 
 export function Podium({ lastRace }) {
   const top3 = (lastRace?.results || []).slice(0, 3);
   if (top3.length < 3) return null;
   const [p1, p2, p3] = top3;
   const order = [p2, p1, p3]; // visual podium arrangement
+  const shotByNum = new Map((lastRace?.openf1Drivers || []).map((d) => [+d.number, d.headshot]));
   return (
     <div className="podium">
       {order.map((r) => {
         const team = teamByConstructorId(r.constructorId);
+        const shot = hiResHeadshot(shotByNum.get(+r.number));
         return (
           <div key={r.driverId} className={`pod-step ${r.position === 1 ? 'p1' : ''}`} style={{ '--row-color': team.color }}>
             <div className="pod-rank">P{r.position}</div>
-            <div className="pod-driver">{r.firstName} {r.lastName}</div>
+            {shot && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="pod-img" src={shot} alt={r.lastName} loading="lazy" />
+            )}
+            <div className="pod-driver f1-name"><span className="fn">{r.firstName}</span> <span className="ln">{r.lastName}</span></div>
             <div className="pod-team">{r.constructorName}</div>
             <div className="pod-time">{r.time || r.status}</div>
           </div>

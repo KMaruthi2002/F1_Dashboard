@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Panel from './Panel';
-import { teamByConstructorId } from '@/lib/teams';
+import { teamByConstructorId, hiResHeadshot } from '@/lib/teams';
 
 export default function FavDriver({ profile, standings, lastRace, onEdit }) {
   const [career, setCareer] = useState(null);
@@ -34,9 +34,10 @@ export default function FavDriver({ profile, standings, lastRace, onEdit }) {
   }
 
   const team = standing ? teamByConstructorId(standing.constructorId) : null;
-  const headshot = (lastRace?.openf1Drivers || []).find(
-    (d) => standing && +d.number === +standing.number
-  )?.headshot;
+  const headshot = hiResHeadshot(
+    (lastRace?.openf1Drivers || []).find((d) => standing && +d.number === +standing.number)?.headshot,
+    '' // full 840px render
+  );
 
   return (
     <Panel kicker="§ 09 · PILOT" title="Your Driver" sub="career · form · numbers">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Panel from './Panel';
-import { flagFor } from '@/lib/teams';
+import { flagFor, flagUrl } from '@/lib/teams';
 
 function pad(n) {
   return String(Math.max(0, n)).padStart(2, '0');
@@ -78,7 +78,11 @@ export default function Hero({ nextRace, profile, season }) {
               ◆ ROUND {pad(nextRace.round)} · UP NEXT
             </div>
             <h1 className="hero-title">
-              {flagFor(nextRace.country)} {nextRace.name?.replace(' Grand Prix', '')}
+              {flagUrl(nextRace.country) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="flag-img lg" src={flagUrl(nextRace.country)} alt={nextRace.country} />
+              ) : flagFor(nextRace.country)}{' '}
+              {nextRace.name?.replace(' Grand Prix', '')}
               <br />
               <span className="thin">Grand Prix</span>
             </h1>

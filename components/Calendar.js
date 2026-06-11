@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Panel from './Panel';
-import { flagFor, teamByConstructorId } from '@/lib/teams';
+import { flagFor, flagUrl, teamByConstructorId } from '@/lib/teams';
 
 function fmt(iso, opts = { month: 'short', day: 'numeric' }) {
   return iso ? new Date(iso).toLocaleDateString(undefined, opts) : '—';
@@ -53,7 +53,12 @@ export default function Calendar({ schedule, nextRound, liveRace }) {
                   {isLive ? <span className="ct-tag t-live">◉ LIVE</span>
                     : isNext ? <span className="ct-tag t-next">NEXT</span>
                     : done ? <span className="ct-tag t-done">✓</span> : null}
-                  <div className="ct-flag">{flagFor(r.country)}</div>
+                  <div className="ct-flag">
+                    {flagUrl(r.country) ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img className="flag-img" src={flagUrl(r.country)} alt={r.country} loading="lazy" />
+                    ) : flagFor(r.country)}
+                  </div>
                   <div className="ct-name">{r.name.replace(' Grand Prix', ' GP')}</div>
                   <div className="ct-loc">{r.locality} · {r.country}</div>
                   <div className="ct-date">{isLive ? 'ENTER RACE CENTER →' : fmt(r.race)}</div>

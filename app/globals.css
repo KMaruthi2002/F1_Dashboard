@@ -827,3 +827,85 @@ body {
   color: var(--text-dim); text-decoration: none; padding: 7px 14px; border: 1px solid var(--line);
 }
 .back-link:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ════════════════ F1 broadcast styling pass ════════════════ */
+
+/* racing kerb stripe — the red/white curb edge */
+.kerb {
+  height: 6px;
+  background: repeating-linear-gradient(-45deg, #e10600 0 14px, #f4f4f4 14px 28px);
+  opacity: 0.85;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 6px 100%);
+}
+.kerb.thin { height: 4px; opacity: 0.6; }
+
+/* F1 TV position plate: white number on team-color block */
+.pos-plate {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 30px; height: 26px; padding: 0 4px;
+  background: var(--row-color, #333);
+  color: #fff; font-family: var(--font-display); font-weight: 900; font-size: 14px;
+  border-radius: 5px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--row-color, #333) 35%, transparent);
+}
+.pos-plate.gold { background: linear-gradient(135deg, #ffd24a, #b8860b); color: #1a1200; text-shadow: none; }
+
+/* driver avatars in standings / tower */
+.drv-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  object-fit: cover; object-position: top;
+  background: #0c1018;
+  border: 2px solid var(--row-color, var(--line-strong));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--row-color, var(--cyan)) 30%, transparent);
+  flex-shrink: 0;
+}
+.drv-avatar.lg { width: 64px; height: 64px; }
+
+/* F1 broadcast name treatment: First LASTNAME */
+.f1-name .fn { font-weight: 400; color: var(--text-dim); }
+.f1-name .ln { font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* podium headshots */
+.pod-img {
+  width: 76px; height: 76px; border-radius: 50%;
+  object-fit: cover; object-position: top;
+  margin: 0 auto 8px; display: block;
+  background: #0c1018;
+  border: 3px solid var(--row-color, var(--line-strong));
+  box-shadow: 0 0 18px color-mix(in srgb, var(--row-color, var(--cyan)) 40%, transparent);
+}
+.pod-step.p1 .pod-img { width: 96px; height: 96px; border-color: var(--amber); box-shadow: 0 0 26px rgba(255,179,0,0.4); }
+
+/* standings rows get a little more broadcast feel */
+.st-row { grid-template-columns: 44px 38px 1fr auto; }
+.st-row .no-avatar {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #0c1018; border: 2px solid var(--row-color, var(--line-strong));
+  font-family: var(--font-mono); font-size: 10px; color: var(--row-color, var(--text-dim));
+}
+.st-row.teams { grid-template-columns: 44px 1fr auto; }
+
+/* ── Real flags + team logos ── */
+.flag-img {
+  width: 30px; height: 20px; object-fit: cover;
+  border-radius: 2px; display: inline-block; vertical-align: -4px;
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.5);
+}
+.flag-img.lg { width: 44px; height: 30px; vertical-align: -6px; }
+.team-logo {
+  width: 32px; height: 32px; object-fit: contain; flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(0,0,0,0.6));
+}
+.team-logo-badge {
+  width: 32px; height: 32px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--row-color, #333) 22%, transparent);
+  border: 1px solid var(--row-color, var(--line-strong));
+  border-radius: 6px;
+  font-family: var(--font-display); font-weight: 900; font-size: 13px;
+  color: var(--row-color, var(--text));
+}
+.st-row.teams { grid-template-columns: 44px 40px 1fr auto; }

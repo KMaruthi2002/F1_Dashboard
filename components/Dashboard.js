@@ -152,6 +152,12 @@ export default function Dashboard() {
     () => (standings?.drivers || []).find((d) => d.driverId === profile?.driverId),
     [standings, profile]
   );
+
+  // car number → headshot URL (for avatars across the dashboard)
+  const headshotByNum = useMemo(
+    () => Object.fromEntries((lastRace?.openf1Drivers || []).map((d) => [+d.number, d.headshot])),
+    [lastRace]
+  );
   const accent = favStanding ? teamByConstructorId(favStanding.constructorId).color : null;
   const accentStyle = accent
     ? { '--accent': accent, '--accent-glow': `color-mix(in srgb, ${accent} 35%, transparent)` }
@@ -208,6 +214,7 @@ export default function Dashboard() {
             {tickerItems}
           </div>
         </div>
+        <div className="kerb" style={{ margin: '0 calc(-1 * clamp(14px, 3vw, 40px))' }} />
 
         {/* live session banner → Race Center */}
         <div className="live-banner" style={!live?.live ? { animation: 'none', borderColor: 'var(--line)', background: 'rgba(255,255,255,0.02)' } : undefined}>
@@ -233,7 +240,7 @@ export default function Dashboard() {
         </div>
 
         <div id="championship" className="grid-2 fade-in">
-          <DriverStandings standings={standings} favDriverId={profile?.driverId} onSelect={setDrawerDriver} />
+          <DriverStandings standings={standings} favDriverId={profile?.driverId} onSelect={setDrawerDriver} headshots={headshotByNum} />
           <ConstructorStandings standings={standings} />
         </div>
 
@@ -264,7 +271,8 @@ export default function Dashboard() {
           />
         </div>
 
-        <footer className="footer">
+        <div className="kerb thin" style={{ marginTop: 60 }} />
+        <footer className="footer" style={{ marginTop: 0, borderTop: 'none', paddingTop: 20 }}>
           <span className="brand">APEX <em>//</em> TELEMETRY</span>
           <span>DATA · JOLPICA F1 + OPENF1 · AUTO-REFRESH</span>
           <span className="right">UNOFFICIAL FAN PROJECT · NOT AFFILIATED WITH F1, FIA OR FOM</span>

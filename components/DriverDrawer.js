@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { teamByConstructorId } from '@/lib/teams';
+import { teamByConstructorId, hiResHeadshot } from '@/lib/teams';
 
 export default function DriverDrawer({ driver, lastRace, onClose, onFavourite, isFavourite }) {
   const [career, setCareer] = useState(null);
@@ -25,7 +25,10 @@ export default function DriverDrawer({ driver, lastRace, onClose, onFavourite, i
 
   if (!driver) return null;
   const team = teamByConstructorId(driver.constructorId);
-  const headshot = (lastRace?.openf1Drivers || []).find((d) => +d.number === +driver.number)?.headshot;
+  const headshot = hiResHeadshot(
+    (lastRace?.openf1Drivers || []).find((d) => +d.number === +driver.number)?.headshot,
+    '' // full 840px render
+  );
   const raceResult = (lastRace?.results || []).find((r) => r.driverId === driver.driverId);
 
   return (
