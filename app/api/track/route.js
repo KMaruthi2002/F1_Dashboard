@@ -142,16 +142,6 @@ export async function GET() {
       mode,
       circuit: s.circuit_short_name,
       sourceYear: sourceSession?.year,
-      // diagnostics: hit /api/track?debug=1 to see exactly what resolved
-      diag: {
-        liveSession: s.session_key,
-        sourceSession: sourceSession?.session_key,
-        sourceName: sourceSession?.session_name,
-        outlinePts: outline.length,
-        pitPts: pitLane.length,
-        carCount: dots.length,
-        boundsOk: !!bounds,
-      },
       bounds,
       outline,
       pitLane,
