@@ -18,11 +18,12 @@ export async function GET(_req, { params }) {
     const live = now >= start - 10 * 60e3 && now <= end + 30 * 60e3;
 
     let winStart, winEnd;
-    if (live) { winStart = now - 15e3; winEnd = now + 5e3; }
-    else {
-      // sessions often end early · sample 75% of the way through
+    if (live) {
+      // wider window · between quali runs a car can be parked, and the feed lags
+      winStart = now - 90e3; winEnd = now + 5e3;
+    } else {
       const mid = start + (end - start) * 0.75;
-      winStart = mid; winEnd = mid + 15e3;
+      winStart = mid - 30e3; winEnd = mid + 30e3;
     }
 
     const rows = await openf1(
@@ -31,11 +32,13 @@ export async function GET(_req, { params }) {
     ).catch(() => []);
 
     const samples = Array.isArray(rows) ? rows : [];
-    // prefer a real moving sample; zeroed channels mean the feed is dead
-    const last = [...samples].reverse().find((r) => (r.speed || 0) > 0 || (r.rpm || 0) > 0) || samples[samples.length - 1];
-    if (!last || ((last.speed || 0) === 0 && (last.rpm || 0) === 0)) {
-      return json({ ok: false, live, reason: 'no onboard channel for this session' }, live ? 10 : 300);
+    // prefer the latest MOVING sample; fall back to the most recent of any kind
+    const moving = [...samples].reverse().find((r) => (r.speed || 0) > 0 || (r.rpm || 0) > 0);
+    const last = moving || samples[samples.length - 1];
+    if (!last) {
+      return json({ ok: false, live, reason: live ? 'car is in the garage' : 'no onboard channel for this session' }, live ? 10 : 300);
     }
+    const inGarage = (last.speed || 0) === 0 && (last.rpm || 0) === 0;
 
     // DRS decode per OpenF1 docs: 10,12,14 = open
     const drsOpen = [10, 12, 14].includes(last.drs);
@@ -43,6 +46,7 @@ export async function GET(_req, { params }) {
     return json({
       ok: true,
       live,
+      inGarage,
       mode: live ? 'LIVE' : 'REPLAY',
       number: +num,
       speed: last.speed,

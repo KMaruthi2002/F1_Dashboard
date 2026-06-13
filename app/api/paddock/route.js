@@ -278,21 +278,25 @@ export async function POST(req) {
       const prev = user.predictions[round] || {};
       const next = { ...prev };
 
+      // fail-safe: if we can't determine the lock time, treat the pick as LOCKED
+      // (never let a missing schedule field open a backdoor after the event)
       if (race !== undefined) {
-        if (qualiEnd && now >= qualiEnd) return err('Podium picks are locked · qualifying is done', 423);
-        if (!qualiEnd && times.race && now >= times.race) return err('Race picks are locked · lights out has happened', 423);
+        const podiumLock = qualiEnd || times.race;
+        if (!podiumLock) return err('Picks are closed for this round', 423);
+        if (now >= podiumLock) return err(qualiEnd ? 'Podium picks are locked · qualifying is done' : 'Race picks are locked', 423);
         if (!Array.isArray(race) || race.length !== 3 || new Set(race.filter(Boolean)).size !== race.filter(Boolean).length) {
           return err('Pick three different drivers');
         }
         next.race = race;
       }
       if (pole !== undefined) {
-        if (times.quali && now >= times.quali) return err('Pole pick is locked · qualifying has started', 423);
+        const poleLock = times.quali || times.race;
+        if (!poleLock || now >= poleLock) return err('Pole pick is locked · qualifying has started', 423);
         next.pole = pole;
       }
       if (sprint !== undefined) {
         if (!times.hasSprint) return err('No sprint this weekend');
-        if (times.sprint && now >= times.sprint) return err('Sprint pick is locked', 423);
+        if (!times.sprint || now >= times.sprint) return err('Sprint pick is locked', 423);
         next.sprint = sprint;
       }
       next.savedAt = new Date().toISOString();

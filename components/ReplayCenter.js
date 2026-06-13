@@ -117,15 +117,24 @@ export default function ReplayCenter() {
           while (arr.length > 2 && arr[0][0] < cursorMs.current - 20e3) arr.shift();
         }
       }
-      // scrubbed into a data void (e.g. after the cooldown) → walk back to the
-      // last moments that actually have cars on track
-      if (replace && gotSamples === 0 && offsetMs > CHUNK_S * 1000) {
-        const back = offsetMs - CHUNK_S * 1000;
-        cursorMs.current = back + 5e3;
-        setCursorDisplay(back + 5e3);
-        fetching.current = false; // hand off to the retry
-        await loadChunk(back, true);
-        return;
+      // scrubbed into a data void (e.g. past the cooldown) → walk back in 90s
+      // steps to the last moment that actually has cars on track. Bounded loop
+      // (no recursion) so the buffering flag is always cleared in finally.
+      let cur = offsetMs;
+      while (replace && gotSamples === 0 && cur > CHUNK_S * 1000 && gen.current === myGen) {
+        cur -= CHUNK_S * 1000;
+        const stepIso = new Date(startAbs + cur).toISOString().slice(0, 19);
+        const dd = await fetchJson(`/api/replay?sk=${meta.sessionKey}&from=${stepIso}&dur=${CHUNK_S}`);
+        if (gen.current !== myGen) return;
+        if (dd?.ok && Object.keys(dd.tracks || {}).length) {
+          buf.current = { tracks: new Map(), start: cur, end: cur + (dd.durMs || CHUNK_S * 1000) };
+          for (const [n, samples] of Object.entries(dd.tracks)) {
+            gotSamples += samples.length;
+            buf.current.tracks.set(+n, samples.map(([dt, x, y]) => [cur + dt, x, y]));
+          }
+          cursorMs.current = cur + 5e3;
+          setCursorDisplay(cur + 5e3);
+        }
       }
     } finally {
       if (gen.current === myGen) {
@@ -299,7 +308,11 @@ export default function ReplayCenter() {
             />
 
             <div className="replay-controls">
-              <button className="rp-btn play" onClick={() => setPlaying((p) => !p)} disabled={!meta || buffering}>
+              <button className="rp-btn play" onClick={() => {
+                // if parked at the chequered flag, rewind to the start before playing
+                if (!playing && cursorMs.current >= duration - 1000) scrub(10 * 60e3);
+                setPlaying((p) => !p);
+              }} disabled={!meta || buffering}>
                 {buffering ? '…' : playing ? '❚❚' : '▶'}
               </button>
               <div className="rp-speeds">

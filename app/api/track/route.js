@@ -1,4 +1,4 @@
-import { openf1, json, latestPerDriver, circuitOutline } from '@/lib/f1';
+import { openf1, json, latestPerDriver, circuitOutline, extent } from '@/lib/f1';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,25 +32,36 @@ export async function GET() {
 
     const drivers = await openf1(`/drivers?session_key=${s.session_key}`, 3600).catch(() => []);
 
-    // ── 1) outline: current session, else same circuit in previous years ──
-    let outlinePts = await findOutline(s, drivers);
-    let sourceSession = s;
+    // ── 1) outline: the circuit shape never changes between sessions, so prefer
+    // a COMPLETED session (lots of clean timed laps) over a live one that has
+    // barely run. Search this circuit across recent years + session types.
+    let outlinePts = null;
+    let sourceSession = null;
     let sourceDrivers = drivers;
-    if (!outlinePts) {
-      for (const year of [s.year - 1, s.year - 2]) {
-        const prev = await openf1(
-          `/sessions?circuit_key=${s.circuit_key ?? ''}&year=${year}&session_name=Race`, 86400
+
+    // build candidate sessions: current first ONLY if it's already deep enough,
+    // then this circuit's past Races and Qualis going back several years
+    const candidates = [];
+    if (!live) candidates.push({ session: s, drivers });
+    for (const year of [s.year, s.year - 1, s.year - 2, s.year - 3]) {
+      for (const type of ['Race', 'Qualifying']) {
+        const list = await openf1(
+          `/sessions?circuit_short_name=${encodeURIComponent(s.circuit_short_name)}&year=${year}&session_name=${type}`, 86400
         ).catch(() => []);
-        // circuit_key missing on latest payloads sometimes · match by name
-        const cand = (Array.isArray(prev) ? prev : []).find(
-          (p) => p.circuit_short_name === s.circuit_short_name
-        ) || prev?.[0];
-        if (!cand) continue;
-        const candDrivers = await openf1(`/drivers?session_key=${cand.session_key}`, 86400).catch(() => []);
-        outlinePts = await findOutline(cand, candDrivers);
-        if (outlinePts) { sourceSession = cand; sourceDrivers = candDrivers; break; }
+        const cand = (Array.isArray(list) ? list : [])[0];
+        // skip the in-progress session itself
+        if (cand && cand.session_key !== s.session_key) candidates.push({ session: cand, drivers: null });
       }
     }
+    // finally, the live session itself as a last resort
+    candidates.push({ session: s, drivers });
+
+    for (const c of candidates) {
+      const cd = c.drivers || await openf1(`/drivers?session_key=${c.session.session_key}`, 86400).catch(() => []);
+      const pts = await findOutline(c.session, cd);
+      if (pts) { outlinePts = pts; sourceSession = c.session; sourceDrivers = cd; break; }
+    }
+    if (!sourceSession) sourceSession = s;
 
     // circuitOutline already returns clean, smoothed [x,y] pairs
     const outline = outlinePts || [];
@@ -76,8 +87,8 @@ export async function GET() {
     let bounds = null;
     const allPts = [...outline, ...pitLane];
     if (allPts.length) {
-      const xs = allPts.map((p) => p[0]); const ys = allPts.map((p) => p[1]);
-      bounds = { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+      const [minX, maxX] = extent(allPts, 0); const [minY, maxY] = extent(allPts, 1);
+      bounds = { minX, maxX, minY, maxY };
     }
 
     // ── 2) car dots ──

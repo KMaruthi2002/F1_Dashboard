@@ -108,7 +108,9 @@ export default function RaceCenter() {
             style={selTeam ? { borderColor: `color-mix(in srgb, ${selTeam.color} 40%, transparent)` } : undefined}
           >
             {!car ? (
-              <div className="rc-msg">No onboard channel for this car right now.</div>
+              <div className="rc-msg">
+                {live?.live ? 'Car is in the garage · pick another car or wait for them to head out.' : 'No onboard channel for this car right now.'}
+              </div>
             ) : (
               <div className="gauges">
                 <div className="gauge">

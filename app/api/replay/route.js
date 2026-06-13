@@ -1,4 +1,4 @@
-import { openf1, jolpica, json, latestPerDriver, circuitOutline } from '@/lib/f1';
+import { openf1, jolpica, json, latestPerDriver, circuitOutline, extent } from '@/lib/f1';
 
 export const dynamic = 'force-dynamic';
 
@@ -133,8 +133,8 @@ export async function GET(req) {
     let bounds = null;
     const allPts = [...outline, ...pitLane];
     if (allPts.length) {
-      const xs = allPts.map((p) => p[0]); const ys = allPts.map((p) => p[1]);
-      bounds = { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+      const [minX, maxX] = extent(allPts, 0); const [minY, maxY] = extent(allPts, 1);
+      bounds = { minX, maxX, minY, maxY };
     }
 
     return json({
