@@ -83,8 +83,14 @@ export async function GET() {
       }
     } catch { /* best effort */ }
 
-    // bounds cover track + pit lane
+    // bounds from the OUTLINE ONLY — a stray pit GPS point must never distort
+    // the frame. Then drop any pit points that fall absurdly outside the track.
     let bounds = null;
+    if (outline.length) {
+      const [oMinX, oMaxX] = extent(outline, 0); const [oMinY, oMaxY] = extent(outline, 1);
+      const padX = (oMaxX - oMinX) * 0.18; const padY = (oMaxY - oMinY) * 0.18;
+      pitLane = pitLane.filter(([x, y]) => x >= oMinX - padX * 4 && x <= oMaxX + padX * 4 && y >= oMinY - padY * 4 && y <= oMaxY + padY * 4);
+    }
     const allPts = [...outline, ...pitLane];
     if (allPts.length) {
       const [minX, maxX] = extent(allPts, 0); const [minY, maxY] = extent(allPts, 1);
@@ -136,12 +142,22 @@ export async function GET() {
       mode,
       circuit: s.circuit_short_name,
       sourceYear: sourceSession?.year,
+      // diagnostics: hit /api/track?debug=1 to see exactly what resolved
+      diag: {
+        liveSession: s.session_key,
+        sourceSession: sourceSession?.session_key,
+        sourceName: sourceSession?.session_name,
+        outlinePts: outline.length,
+        pitPts: pitLane.length,
+        carCount: dots.length,
+        boundsOk: !!bounds,
+      },
       bounds,
       outline,
       pitLane,
       cars: dots,
     }, mode === 'LIVE' ? 10 : 600);
   } catch (e) {
-    return json({ ok: false, degraded: e.message }, 30);
+    return json({ ok: false, degraded: e.message, stack: String(e?.stack || '').slice(0, 400) }, 30);
   }
 }
