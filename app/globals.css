@@ -1491,3 +1491,6 @@ body {
   color: var(--text); font-family: var(--font-ui); font-size: 14px; outline: none;
 }
 .forum-composer input:focus { border-color: var(--accent); box-shadow: 0 0 14px var(--accent-glow); }
+
+/* cap the race-control feed so it scrolls internally instead of growing the page */
+.rc-feed-scroll { max-height: 280px; overflow-y: auto; padding-right: 4px; }

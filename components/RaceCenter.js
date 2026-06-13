@@ -87,8 +87,9 @@ export default function RaceCenter() {
       <div className="rc-layout">
         <div className="rc-col">
           <Panel kicker="§ MAP" title="Track Positions" sub={track?.circuit || '…'}>
-            {isLive && track?.mode === 'LIVE' && track?.bounds ? (
-              // live session with working GPS → smooth broadcast-style feed
+            {isLive && track?.bounds && live?.session?.key ? (
+              // live session → smooth broadcast-style feed (draws as soon as we
+              // have a circuit outline, even before live dots start flowing)
               <LiveTrackMap
                 bounds={track.bounds}
                 outline={track.outline}
@@ -222,8 +223,8 @@ export default function RaceCenter() {
 
           {(live?.raceControl || []).length > 0 && (
             <Panel kicker="§ FIA" title="Race Control">
-              <div className="rc-feed" style={{ marginTop: 0 }}>
-                {live.raceControl.map((m, i) => (
+              <div className="rc-feed rc-feed-scroll" style={{ marginTop: 0 }}>
+                {live.raceControl.slice(0, 30).map((m, i) => (
                   <div key={i} className="rc-msg">
                     <span className={`flag-${m.flag || 'NONE'}`}>[{m.flag || m.category || 'FIA'}]</span> {m.message}
                   </div>
