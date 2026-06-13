@@ -1,4 +1,4 @@
-import { openf1, json, latestPerDriver, extractLap } from '@/lib/f1';
+import { openf1, json, latestPerDriver, circuitOutline } from '@/lib/f1';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,15 +13,10 @@ async function trace(sessionKey, driverNumber, t0, t1, revalidate) {
   return nonZero(rows);
 }
 
-// Find a usable GPS trace within a session (cars must actually be on track)
+// outline from a real timed lap (returns array of [x,y]) — accurate on every track
 async function findOutline(session, drivers) {
-  const start = new Date(session.date_start).getTime();
-  const ref = drivers?.[0]?.driver_number || 1;
-  for (const off of [12, 35]) {
-    const pts = await trace(session.session_key, ref, start + off * 60e3, start + (off + 2.5) * 60e3, 21600);
-    if (pts.length > 50) return extractLap(pts);
-  }
-  return null;
+  const flat = await circuitOutline(session.session_key, drivers, 21600);
+  return flat && flat.length > 50 ? flat : null;
 }
 
 export async function GET() {
@@ -57,11 +52,8 @@ export async function GET() {
       }
     }
 
-    let outline = [];
-    if (outlinePts) {
-      const step = Math.max(1, Math.floor(outlinePts.length / 420));
-      outline = outlinePts.filter((_, i) => i % step === 0).map((p) => [p.x, p.y]);
-    }
+    // circuitOutline already returns clean, smoothed [x,y] pairs
+    const outline = outlinePts || [];
 
     // pit lane geometry from a real stop in the outline-source session
     let pitLane = [];
@@ -82,7 +74,7 @@ export async function GET() {
 
     // bounds cover track + pit lane
     let bounds = null;
-    const allPts = [...(outlinePts || []).map((p) => [p.x, p.y]), ...pitLane];
+    const allPts = [...outline, ...pitLane];
     if (allPts.length) {
       const xs = allPts.map((p) => p[0]); const ys = allPts.map((p) => p[1]);
       bounds = { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };

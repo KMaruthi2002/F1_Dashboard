@@ -1,4 +1,4 @@
-import { openf1, jolpica, json, latestPerDriver, extractLap } from '@/lib/f1';
+import { openf1, jolpica, json, latestPerDriver, circuitOutline } from '@/lib/f1';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,14 +13,10 @@ async function trace(sessionKey, driverNumber, t0, t1) {
   return nonZero(rows);
 }
 
+// outline from a real timed lap → array of [x,y], accurate on every circuit
 async function findOutline(session, drivers) {
-  const start = new Date(session.date_start).getTime();
-  const ref = drivers?.[0]?.driver_number || 1;
-  for (const off of [12, 35]) {
-    const pts = await trace(session.session_key, ref, start + off * 60e3, start + (off + 2.5) * 60e3);
-    if (pts.length > 50) return extractLap(pts);
-  }
-  return null;
+  const flat = await circuitOutline(session.session_key, drivers, 21600);
+  return flat && flat.length > 50 ? flat : null;
 }
 
 async function hasGps(session, refDriver) {
@@ -116,13 +112,8 @@ export async function GET(req) {
       openf1(`/pit?session_key=${session.session_key}`, 3600).catch(() => []),
     ]);
 
-    // circuit geometry for this exact session
-    const outlinePts = await findOutline(session, drivers);
-    let outline = [];
-    if (outlinePts) {
-      const step = Math.max(1, Math.floor(outlinePts.length / 420));
-      outline = outlinePts.filter((_, i) => i % step === 0).map((p) => [p.x, p.y]);
-    }
+    // circuit geometry from a real timed lap — clean, smoothed [x,y] pairs
+    const outline = (await findOutline(session, drivers)) || [];
 
     // pit lane geometry: trace a car's GPS through one of its actual stops
     let pitLane = [];
@@ -140,7 +131,7 @@ export async function GET(req) {
 
     // bounds cover both the track and the pit lane so nothing renders outside
     let bounds = null;
-    const allPts = [...(outlinePts || []).map((p) => [p.x, p.y]), ...pitLane];
+    const allPts = [...outline, ...pitLane];
     if (allPts.length) {
       const xs = allPts.map((p) => p[0]); const ys = allPts.map((p) => p[1]);
       bounds = { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
