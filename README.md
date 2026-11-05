@@ -38,6 +38,17 @@ OPENF1_PASSWORD=your-openf1-password
 
 The server exchanges these for an OAuth2 token automatically (tokens expire hourly — refresh is handled, including mid-request 401 retries). Credentials never reach the browser. Without them the dashboard still works fully, with sessions appearing ~30 min after they end.
 
+### Paddock game (optional)
+
+The Paddock game stores accounts and picks in Vercel Blob and can send password-recovery emails through Resend. Both are optional and configured with environment variables:
+
+| Variable | Purpose |
+|---|---|
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob token. Set automatically when you connect a Blob store; a custom prefix produces `<PREFIX>_READ_WRITE_TOKEN`, which is also accepted |
+| `BLOB_STORE_ID` | Alternative to the token for store integrations that authenticate through the runtime |
+| `RESEND_API_KEY` | Enables email recovery (via [Resend](https://resend.com)). Without it, email recovery is unavailable |
+| `RESEND_FROM` | Sender address for recovery emails. Defaults to `APEX Telemetry <onboarding@resend.dev>` |
+
 ## Run locally
 
 ```bash
